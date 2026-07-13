@@ -1,0 +1,57 @@
+"use client"
+
+import * as React from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
+import Link from "next/link";
+import { Button } from "@/components/ui/button"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { MenuIcon } from "lucide-react"
+
+
+
+export function MenuDrawer() {
+  const [open, setOpen] = React.useState(false)
+  const isMobile = useIsMobile()
+
+  if (!isMobile) {
+    return null
+  }
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={setOpen}
+      showSwipeHandle={isMobile}
+      swipeDirection={"right"}
+    >
+      <DrawerTrigger render={<Button variant="ghost"><MenuIcon /></Button>} />
+
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Menu</DrawerTitle>
+        </DrawerHeader>
+        
+        <div className="p-3 pl-10 flex flex-col gap-5 text-sm font-bold text-[var(--muted-ink)] ">
+            <Link href="/about" className="transition hover:text-[var(--brand)]">
+                About
+            </Link>
+            
+            <Link href="/returns-calculator" className="transition hover:text-[var(--brand)]">
+                Calculator
+            </Link>
+
+            <Link href="/contact" className="transition hover:text-[var(--brand)]">
+                Contact
+            </Link>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  )
+}
