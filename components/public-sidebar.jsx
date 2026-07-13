@@ -13,7 +13,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import { MenuIcon } from "lucide-react"
+import { ArrowRight, MenuIcon } from "lucide-react"
 
 
 
@@ -54,12 +54,12 @@ export function MenuDrawer() {
         </div>
 
         <DrawerFooter>
-            <Link
-                href="/investment-request"
-                className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-black text-white shadow-[0_14px_32px_rgb(44_22_182_/_0.26)] transition hover:-translate-y-0.5"
-            >
-                Start investing
-            </Link>
+          <Link
+              href="/investment-request"
+              className="rounded-full flex content-between bg-[#0057a6] px-4 py-2 text-sm font-black text-white shadow-[0_14px_32px_rgb(44_22_182_/_0.26)] transition hover:-translate-y-0.5"
+          >
+              Start investing <ArrowRight />
+          </Link>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
