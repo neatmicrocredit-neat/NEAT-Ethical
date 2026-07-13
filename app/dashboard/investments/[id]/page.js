@@ -83,7 +83,7 @@ export default async function InvestmentDetailPage({ params }) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-semibold uppercase text-slate-500">Investment Vehicle</p>
-                  <p className="mt-1 text-slate-900">{investment.rollover ? "Enabled" : "Disabled"}</p>
+                  <p className="mt-1 text-slate-900">{new String(investment.vehicle).toLocaleUpperCase()}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase text-slate-500">Rollover</p>

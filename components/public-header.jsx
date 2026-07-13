@@ -1,12 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Leaf } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MenuDrawer } from "./public-sidebar";
+import Image from "next/image";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {motion} from 'motion/react';
+import { Button } from "./ui/button";
+
 
 export default function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
+  const isMobile = useIsMobile();
+  const parentVariants = {
+    hover: {}, // parent doesn’t need to animate, but passes down the state
+  };
+
+  const arrowVariants = {
+    initial: { x: 0 },
+    hover: { x: 5 }, // move arrow to the right
+  };
+
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 160);
@@ -25,8 +40,8 @@ export default function PublicHeader() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-black text-[var(--brand)]">
-          <span className="grid size-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-[0_12px_28px_rgb(44_22_182_/_0.22)]">
-            <Leaf className="size-4" />
+          <span className="grid place-items-center rounded-full bg-[white] text-white shadow-[0_12px_28px_rgb(44_22_182_/_0.22)]">
+            <Image src="/img/ethical-logo-nobg.png" alt="NEAT Ethical Logo" width={55} height={55} />
           </span>
           NEAT Ethical
         </Link>
@@ -42,16 +57,15 @@ export default function PublicHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-3">
-          {/* <Link href="/auth/login" className="hidden text-sm font-bold text-[var(--brand)] sm:inline-flex">
-            Log in
-          </Link> */}
-          <Link
-            href="/investment-request"
-            className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-black text-white shadow-[0_14px_32px_rgb(44_22_182_/_0.26)] transition hover:-translate-y-0.5"
-          >
-            Start investing
-          </Link>
-
+          {!isMobile &&
+            <motion.button whileHover="hover" initial="initial" variants={parentVariants}>
+              <Link
+              href="/investment-request"
+              className="rounded-full flex bg-[var(--brand)] px-4 py-2 text-sm font-black text-white shadow-[0_14px_32px_rgb(44_22_182_/_0.26)] transition hover:-translate-y-0.5"
+            >
+              Start investing <motion.span variants={arrowVariants}><ArrowRight /></motion.span>
+            </Link></motion.button>
+          }
           <MenuDrawer />
         </div>
       </div>

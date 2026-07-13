@@ -137,10 +137,10 @@
   }
 }
 .landing-theme {
-  --brand: #2c16b6;
-  --brand-2: #f8f512;
-  --ink: #21155f;
-  --muted-ink: #766fa4;
+  --brand: #0057a6; /* #002b58; */ /* --brand: #2c16b6 */
+  --brand-2: #002b58; /* #d9950c;*/ /* --brand-2: #f8f512 */
+  --ink: #002b58; /*#0057a6; */ /* --ink: #21155f*/
+  --muted-ink: #276da4; /*#766fa4;*/
   --page: #fcfbff;
   --soft: #f5f3ff;
   --line: #e7e2ff;

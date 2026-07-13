@@ -1,9 +1,12 @@
 ﻿'use client'
-
+import {motion, AnimatePresence} from 'motion/react'
 import Link from "next/link";
 import { ArrowRight, Landmark, Play, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import PublicHeader from "@/components/public-header";
+import PublicFooter from "@/components/public-footer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AnimatableChild, AnimatableParent } from '@/components/animation-container';
+
 
 const cards = [
   { title: "Sukuk notes", value: "18.4%", label: "Projected yearly return" },
@@ -37,6 +40,21 @@ const investmentVehicles = [
   },
 ];
 
+
+
+const HeroText = () => {
+  return(
+    <motion.h1
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="mx-auto max-w-3xl text-balance text-5xl leading-[0.96] sm:text-7xl lg:text-8xl">
+      Watch your money do more
+    </motion.h1>
+  )
+}
+
+
 export default function Home() {
 
   const isMobile = useIsMobile();
@@ -52,20 +70,29 @@ export default function Home() {
           <div className="absolute inset-0 landing-grid opacity-10" />
         </div>
         <div className="relative z-10 mx-auto max-w-4xl text-center">
-          <div className="mx-auto mb-7 inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[var(--muted-ink)] shadow-sm">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5, ease: 'backInOut'}}
+            className="mx-auto mb-7 inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[var(--muted-ink)] shadow-sm">
             <Sparkles className="size-4 text-[var(--brand)]" />
             Transparent wealth building
-          </div>
-          <h1 className="mx-auto max-w-3xl text-balance text-5xl leading-[0.96] sm:text-7xl lg:text-8xl">
-            Watch your money do more
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg font-medium leading-8 text-[var(--ink)]">
+          </motion.div>
+          
+          {/* Animated Hero Text */}
+          <HeroText />
+
+          <motion.p 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="mx-auto mt-6 max-w-2xl text-pretty text-lg font-medium leading-8 text-[var(--ink)]">
             Request Neat Ethical at 24% p.a. or Neat Funding at 60% p.a., then track your placement, projected profit, and next steps with clarity.
-          </p>
+          </motion.p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/investment-request" className="group inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white shadow-[0_18px_44px_color-mix(in_oklab,var(--brand)_32%,transparent)] transition hover:-translate-y-1">
               Start building wealth
-              <ArrowRight className="size-4 transition group-hover:translate-x-1" />
+              <ArrowRight className="size-4 transition group-hover:translate-x-2" />
             </Link>
             <Link href="/returns-calculator" className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-6 py-3 text-sm font-bold text-[var(--ink)] transition hover:-translate-y-1 hover:border-[color:var(--brand)]">
               <TrendingUp className="size-4 text-[var(--brand)]" />
@@ -122,9 +149,12 @@ export default function Home() {
             <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--muted-ink)]">
               Every opportunity is reviewed for transparency, ethical fit, risk, and reporting quality before it reaches your dashboard.
             </p>
-            <Link href="/about" className="mt-8 inline-flex items-center gap-2 text-sm font-black text-[var(--brand)]">
-              See our approach <ArrowRight className="size-4" />
+            <AnimatableParent variants={{hover: {}}}>
+              <Link href="/about" className="mt-8 inline-flex items-center gap-2 text-sm font-black text-[var(--brand)]">
+              See our approach 
+              <AnimatableChild variants={{hover: {x: 5}, initial: {x: 0}}}><ArrowRight className="size-4" /></AnimatableChild>
             </Link>
+            </AnimatableParent>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="landing-panel flex min-h-80 items-end p-6">
@@ -186,28 +216,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-[color:var(--line)] bg-white px-5 py-16 sm:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_1.4fr]">
-          <div>
-            <h2 className="text-3xl text-[var(--muted-ink)]">Your future will not wait.</h2>
-            <Link href="/investment-request" className="mt-4 inline-flex items-center gap-2 text-3xl font-black text-[var(--brand)]">
-              Start growing today <ArrowRight className="size-7" />
-            </Link>
-          </div>
-          <div className="grid gap-6 text-sm font-semibold text-[var(--muted-ink)] sm:grid-cols-4">
-            {["Company", "Product", "Resources", "Contact"].map((group) => (
-              <div key={group}>
-                <p className="mb-4 font-black text-[var(--ink)]">{group}</p>
-                <div className="space-y-3">
-                  <p>About us</p>
-                  <p>Investments</p>
-                  <p>Support</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </main>
   );
 }

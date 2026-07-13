@@ -9,6 +9,7 @@ import {
   DrawerClose,
   DrawerContent,
   DrawerHeader,
+  DrawerFooter,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
@@ -51,6 +52,15 @@ export function MenuDrawer() {
                 Contact
             </Link>
         </div>
+
+        <DrawerFooter>
+            <Link
+                href="/investment-request"
+                className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-black text-white shadow-[0_14px_32px_rgb(44_22_182_/_0.26)] transition hover:-translate-y-0.5"
+            >
+                Start investing
+            </Link>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
