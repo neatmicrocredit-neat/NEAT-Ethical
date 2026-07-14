@@ -1,0 +1,15 @@
+body {
+    margin:0; padding:0; background-color:#eef1f5;
+}
+body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #eef1f5; }
+a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+
+@media screen and (max-width: 600px) {
+.email-container { width: 100% !important; }
+.fluid-padding { padding-left: 20px !important; padding-right: 20px !important; }
+.stack-column { display: block !important; width: 100% !important; }
+.mobile-center { text-align: center !important; }
+}
