@@ -4,8 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 export default async function DashboardHome() {
   const supabase = createSupabaseServerClient();
   const [{ data: customers }, { data: investments }] = await Promise.all([
-    supabase.from("customers").select("id, first_name, last_name, email, created_at").order("created_at", { ascending: false }).limit(5),
-    supabase.from("investments").select("id, customer_id, amount, payout_schedule, created_at").order("created_at", { ascending: false }).limit(5),
+    supabase.from("customers").select("uuid, first_name, last_name, email, created_at").order("created_at", { ascending: false }).limit(5),
+    supabase.from("investments").select("uuid, customer_id, amount, payout_schedule, created_at").order("created_at", { ascending: false }).limit(5),
   ]);
 
   const customerCount = customers?.length ?? 0;
@@ -45,8 +45,8 @@ export default async function DashboardHome() {
           </div>
           <ul className="mt-4 space-y-3">
             {(customers || []).map((customer) => (
-              <li key={customer.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-                <Link href={`/dashboard/customers/${customer.id}`} className="flex-1">
+              <li key={customer.uuid} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm">
+                <Link href={`/dashboard/customers/${customer.uuid}`} className="flex-1">
                   <p className="font-medium text-slate-900">{customer.first_name} {customer.last_name}</p>
                   <p className="text-slate-500">{customer.email}</p>
                 </Link>
@@ -62,8 +62,8 @@ export default async function DashboardHome() {
           </div>
           <ul className="mt-4 space-y-3">
             {(investments || []).map((investment) => (
-              <li key={investment.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-                <Link href={`/dashboard/investments/${investment.id}`} className="flex-1">
+              <li key={investment.uuid} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm">
+                <Link href={`/dashboard/investments/${investment.uuid}`} className="flex-1">
                   <p className="font-medium text-slate-900">Customer {investment.customer_id}</p>
                   <p className="text-slate-500">{investment.payout_schedule || "—"}</p>
                 </Link>

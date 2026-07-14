@@ -41,7 +41,7 @@ export default function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-black text-[var(--brand)]">
           <span className="grid place-items-center rounded-full bg-[white] text-white shadow-[0_12px_28px_rgb(44_22_182_/_0.22)]">
-            <Image src="/img/ethical-logo-nobg.png" alt="NEAT Ethical Logo" width={55} height={55} />
+            <Image loading="lazy" src="/img/ethical-logo-nobg.png" alt="NEAT Ethical Logo" width={55} height={55} />
           </span>
           NEAT Ethical
         </Link>

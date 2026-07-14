@@ -9,7 +9,7 @@ export default async function InvestmentDetailPage({ params }) {
   const { data: investment, error: investmentError } = await supabase
     .from("investments")
     .select("*")
-    .eq("id", id)
+    .eq("uuid", id)
     .single();
 
   const { data: customer } = investment?.customer_id
@@ -30,7 +30,7 @@ export default async function InvestmentDetailPage({ params }) {
 
         
         <div>
-          <Button>
+          <Button className=" rounded-md">
             <Link href="/dashboard/investments" className="text-sm font-medium text-white hover:text-white-300">
               ← Back to investments
             </Link>
