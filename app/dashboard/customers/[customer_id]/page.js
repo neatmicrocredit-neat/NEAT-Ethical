@@ -10,7 +10,7 @@ export default async function CustomerDetailPage({ params }) {
   const { data: customer, error: customerError } = await supabase
     .from("customers")
     .select("*")
-    .eq("id", customer_id)
+    .eq("uuid", customer_id)
     .single();
 
   const { data: investments } = await supabase

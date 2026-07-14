@@ -5,7 +5,7 @@ export default async function InvestmentsPage() {
   const supabase = createSupabaseServerClient();
   const { data: investments, error } = await supabase
     .from("investments")
-    .select("id, customer_id, amount, start_date, end_date, payout_schedule, created_at")
+    .select("uuid, customer_id, amount, start_date, end_date, payout_schedule, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -30,7 +30,7 @@ export default async function InvestmentsPage() {
           <span>Created</span>
         </div>
         {(investments || []).map((investment) => (
-          <Link key={investment.id} href={`/dashboard/investments/${investment.id}`} className="grid grid-cols-[1fr_1fr_1.2fr_1fr_0.7fr] border-b border-slate-100 px-4 py-4 text-sm text-slate-600 last:border-b-0 hover:bg-slate-50">
+          <Link key={investment.uuid} href={`/dashboard/investments/${investment.uuid}`} className="grid grid-cols-[1fr_1fr_1.2fr_1fr_0.7fr] border-b border-slate-100 px-4 py-4 text-sm text-slate-600 last:border-b-0 hover:bg-slate-50">
             <span className="font-medium text-slate-900">{investment.customer_id}</span>
             <span>₦{Number(investment.amount || 0).toLocaleString()}</span>
             <span>{investment.payout_schedule || "—"}</span>
