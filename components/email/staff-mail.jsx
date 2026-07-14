@@ -77,7 +77,7 @@ export function StaffEmailTemplate({
                                     <tr>
                                         <td align="left" style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
                                         {/* Logo / Company Name */}
-                                        <img width={"200px"} height={"150px"} src="/img/ethical-logo-nobg.png" alt="Ethical Logo" />
+                                        <img width={"200px"} height={"150px"} src="https://neat-ethical.vercel.app/img/ethical-logo-nobg.png" alt="Ethical Logo" />
                                         {/* <span style={{ color: "#ffffff", fontSize: "20px", fontWeight: "bold", letterSpacing: "0.3px" }}>[Company Name]</span> */}
                                         </td>
                                         <td align="right" style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
