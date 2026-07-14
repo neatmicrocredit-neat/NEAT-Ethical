@@ -87,7 +87,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="mx-auto mt-6 max-w-2xl text-pretty text-lg font-medium leading-8 text-[var(--ink)]">
-            Invest in Neat Ethical at 24% p.a. or Neat Funding at 60% p.a., then track your placement, projected profit, and next steps with clarity.
+            Invest in Ethical Investment at 24% p.a. or Ethical Funding at 60% p.a., then track your placement, projected profit, and next steps with clarity.
           </motion.p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/investment-request" className="group inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-bold text-white shadow-[0_18px_44px_color-mix(in_oklab,var(--brand)_32%,transparent)] transition hover:-translate-y-1">
