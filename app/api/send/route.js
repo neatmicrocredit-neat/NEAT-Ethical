@@ -1,4 +1,4 @@
-import { CustomerEmailTemplate } from '@/components/email/customer-mail';
+import CustomerWelcomeEmail from '@/components/email/customer-mail';
 import { StaffEmailTemplate } from '@/components/email/staff-mail';
 import { Resend } from 'resend';
 
@@ -16,7 +16,7 @@ async function sendStaffMail({
   ...props
 }){
   const { data, error } = await resend.emails.send({
-    from: 'NEAT Ethical Investments <signups@neatmicrocredit.com.ng>',
+    from: 'NEAT Ethical Investments <info@neatethical.com>',
     to: ['7thogofe@gmail.com'],
     subject: 'Welcome to NEAT Ethical Investments',
     react: StaffEmailTemplate({
@@ -35,15 +35,16 @@ async function sendStaffMail({
   }
 }
 
-async function sendCustomerMail({ first_name, last_name, amount, ...props }) {
+async function sendCustomerMail({ first_name, last_name, email, amount, ...props }) {
   const { data, error } = await resend.emails.send({
-    from: 'NEAT Ethical Investments <signups@neatmicrocredit.com.ng>',
+    from: 'NEAT Ethical Investments <send@neatethical.com>',
     to: [email],
     subject: 'Welcome to NEAT Ethical Investments',
-    react: CustomerEmailTemplate({
+    react: CustomerWelcomeEmail({
       first_name,
       last_name,
-      amount
+      amount,
+      ...props
     }),
   });
   
@@ -65,7 +66,7 @@ export async function POST(request) {
     await sendStaffMail(formData);
     await sendCustomerMail(formData);
     
-    return Response.json({data, oldData}, { status: 200 });
+    return Response.json({ message: "Email Sent Successfully "}, { status: 200 });
 } catch (error) {
     console.log("Error with mailer:", error);
     return Response.json({ error }, { status: 500 });
