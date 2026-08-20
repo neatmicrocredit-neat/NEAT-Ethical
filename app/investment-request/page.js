@@ -7,13 +7,13 @@ import PublicShell from "@/components/public-shell";
 export default function InvestmentRequestPage() {
   return (
     <PublicShell
-      eyebrow="Investment application"
+      eyebrow="Make an investment"
       title="Make a NEAT Ethical investment."
-      description="Send the details needed to begin processing your placement. The team will follow up before any capital is committed."
+      description="Give us the details needed to set up your placement. The team will follow up to confirm everything before any capital is committed."
     >
       <div className="grid gap-5 lg:grid-cols-[0.86fr_1.14fr]" style={{ alignItems: "flex-start" }}>
         <section className="rounded-lg bg-[var(--brand)] p-7 text-white shadow-[0_30px_80px_rgb(44_22_182_/_0.22)] sm:p-10 lg:sticky lg:top-6">
-          <p className="text-sm font-black uppercase text-white/70">Investment application</p>
+          <p className="text-sm font-black uppercase text-white/70">Make an investment</p>
           <h2 className="mt-4 text-4xl leading-none sm:text-5xl">Two ways to place capital with NEAT.</h2>
           <p className="mt-6 max-w-xl text-sm font-semibold leading-7 text-white/75">
             Ethical Investment offers 2% monthly flat profit. Ethical Funding offers 5% monthly flat profit by placing capital into SME lending pools through Neat Microfinance.
@@ -32,7 +32,7 @@ export default function InvestmentRequestPage() {
           </div>
 
           <p className="mt-6 flex items-center gap-3 rounded-lg bg-white/14 p-4 text-sm font-bold text-white">
-            <CheckCircle2 className="size-5" /> This is a request form, not an automatic investment confirmation.
+            <CheckCircle2 className="size-5" /> The team confirms your details and documentation with you before your placement is funded.
           </p>
         </section>
 
