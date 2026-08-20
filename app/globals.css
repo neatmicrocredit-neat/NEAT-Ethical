@@ -224,8 +224,7 @@
 }
 
 .landing-card,
-.landing-panel,
-.landing-quote {
+.landing-panel {
   border-radius: 8px;
   animation: landing-rise 760ms ease both;
   animation-delay: var(--delay, 0ms);
@@ -242,56 +241,18 @@
   transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
+/* Entrance handled by motion's whileInView; the CSS animation would override it. */
+.landing-card.no-rise,
+.landing-panel.no-rise {
+  animation: none;
+}
+
 .landing-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 28px 64px rgb(33 21 95 / 0.12);
 }
 
 
-
-.stem {
-  position: absolute;
-  bottom: 54px;
-  width: 78px;
-  height: 162px;
-  border-left: 5px solid #83d68b;
-  border-right: 5px solid #83d68b;
-  border-radius: 50% 50% 0 0;
-}
-
-.pot {
-  width: 112px;
-  height: 54px;
-  border-radius: 0 0 8px 8px;
-  background: linear-gradient(#ffe3e3, #ffd0d0);
-}
-
-.flower {
-  position: absolute;
-  display: grid;
-  width: 92px;
-  height: 92px;
-  place-items: center;
-  border-radius: 999px;
-  color: white;
-  font-size: 11px;
-  font-weight: 900;
-  text-transform: uppercase;
-  animation: landing-wiggle 4.5s ease-in-out infinite;
-}
-
-
-.flower-a { left: 15%; top: 18%; background: #ff9fc2; }
-.flower-b { right: 13%; top: 21%; background: #a2dc62; animation-delay: 480ms; }
-.flower-c { left: 25%; top: 44%; background: #f8f512; color: #21155f; animation-delay: 900ms; }
-.flower-d { right: 23%; top: 50%; background: #67c7ff; animation-delay: 1300ms; }
-
-.landing-quote {
-  background:
-    linear-gradient(to top, rgb(33 21 95 / 0.72), rgb(33 21 95 / 0.08)),
-    linear-gradient(135deg, #f4f1ff, #ded8ff 45%, #fffef0);
-  box-shadow: 0 28px 60px rgb(33 21 95 / 0.12);
-}
 
 @keyframes landing-float {
   0%, 100% { transform: translateY(0); }
@@ -309,10 +270,6 @@
   }
 }
 
-@keyframes landing-wiggle {
-  0%, 100% { transform: rotate(-4deg) scale(1); }
-  50% { transform: rotate(5deg) scale(1.04); }
-}
 
 @media (max-width: 640px) {
   .landing-theme h1 {
@@ -321,3 +278,24 @@
 }
 
 
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Honour the visitor's motion preference across CSS animations and transitions.
+   Motion components read the same preference through useReducedMotion(). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

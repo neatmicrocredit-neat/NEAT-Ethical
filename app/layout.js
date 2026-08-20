@@ -2,7 +2,8 @@ import { Geist, Geist_Mono, Calistoga } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { WhatsAppFAB } from "@/components/whatsapp-fab";
-import { CallFAB } from "@/components/call-button";
+import { CallDock } from "@/components/call-button";
+import { CallProvider } from "@/components/call-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,9 +36,11 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} ${calistoga.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {children}
-        <CallFAB />
-        <WhatsAppFAB />
+        <CallProvider>
+          {children}
+          <CallDock />
+          <WhatsAppFAB />
+        </CallProvider>
         <Script id="nta-js-popup-js" src="https://neatmicrocredit.com.ng/wp-content/plugins/wp-whatsapp/assets/js/whatsapp-popup.js?ver=3.8.0" />
       </body>
     </html>

@@ -34,7 +34,7 @@ export default function CustomerWelcomeEmail({
           fontFamily: "sans-serif",
         }}
       >
-        Thanks for joining {companyName} — your investment request has been received. Here&apos;s what happens next.
+        Thanks for joining {companyName} — your investment has been received. Here&apos;s what happens next.
       </div>
 
       <table
@@ -120,7 +120,7 @@ export default function CustomerWelcomeEmail({
                                 color: "#5b6572",
                               }}
                             >
-                              We&apos;re glad to have you on the platform. Your investment request has been successfully submitted.
+                              We&apos;re glad to have you on the platform. Your investment has been successfully submitted.
                             </td>
                           </tr>
                         </tbody>
@@ -217,7 +217,7 @@ export default function CustomerWelcomeEmail({
                             >
                               <p style={{ margin: "0 0 16px" }}>Hi {first_name},</p>
                               <p style={{ margin: "0 0 16px" }}>
-                                Thank you for submitting your investment request with {companyName}. Our team has received your information and will begin reviewing it shortly.
+                                Thank you for investing with {companyName}. Our team has received your details and will begin reviewing them shortly.
                               </p>
                             </td>
                           </tr>
@@ -333,7 +333,7 @@ export default function CustomerWelcomeEmail({
                             >
                               <strong style={{ color: "#002b58" }}>Due Diligence &amp; Assessment</strong>
                               <br />
-                              A member of our investment team will evaluate your request and may reach out if additional information is needed.
+                              A member of our investment team will review your details and may reach out if additional information is needed.
                             </td>
                           </tr>
                         </tbody>
@@ -379,7 +379,7 @@ export default function CustomerWelcomeEmail({
                             >
                               <strong style={{ color: "#002b58" }}>Decision &amp; Next Steps</strong>
                               <br />
-                              We&apos;ll follow up by email with a decision or a request for a follow-up call within {decisionDays} business days.
+                              We&apos;ll follow up by email to confirm your placement, or to arrange a call, within {decisionDays} business days.
                             </td>
                           </tr>
                         </tbody>
@@ -553,7 +553,7 @@ export default function CustomerWelcomeEmail({
                             >
                               &copy; {new Date().getFullYear()} NEAT Ethical. All rights reserved.
                               <br />
-                              You&apos;re receiving this email because you submitted a request on our platform.
+                              You&apos;re receiving this email because you placed an investment on our platform.
                             </td>
                           </tr>
                         </tbody>

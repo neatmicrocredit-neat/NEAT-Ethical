@@ -94,7 +94,7 @@ const steps = [
     id: "review",
     eyebrow: "Step 4 of 4",
     title: "Review and submit",
-    description: "Review the details before sending the request to the NEAT team.",
+    description: "Review your investment details before sending them to the NEAT team.",
     requiredFields: [],
   },
 ];
@@ -238,7 +238,16 @@ function ReviewRow({ label, value }) {
 export default function InvestmentRequestForm() {
   const searchParams = useSearchParams();
   const preferredVehicle = searchParams.get("vehicle");
-  const seededState = useMemo(() => ({ ...initialState, vehicle: preferredVehicle === "funding" ? "funding" : "ethical" }), [preferredVehicle]);
+  const preferredAmount = searchParams.get("amount");
+  const seededState = useMemo(() => {
+    const amount = Number(preferredAmount);
+    return {
+      ...initialState,
+      vehicle: preferredVehicle === "funding" ? "funding" : "ethical",
+      // Carried over from the returns calculator, if it sent a usable figure.
+      amount: Number.isFinite(amount) && amount >= 100000 ? String(Math.round(amount)) : initialState.amount,
+    };
+  }, [preferredVehicle, preferredAmount]);
   const [form, setForm] = useState(seededState);
   const [files, setFiles] = useState({});
   const [currentStep, setCurrentStep] = useState(0);
@@ -317,7 +326,7 @@ export default function InvestmentRequestForm() {
     }
 
     setStatus("success");
-    setMessage("Request submitted. The NEAT team will contact you for processing.");
+    setMessage("Investment submitted. The NEAT team will contact you to complete processing.");
     setForm(seededState);
     setFiles({});
     setCurrentStep(0);
@@ -581,7 +590,7 @@ export default function InvestmentRequestForm() {
         {isLastStep ? (
           <button type="submit" disabled={status === "loading"} className={`${navButtonClass} bg-[var(--brand)] text-white hover:-translate-y-1`}>
             {status === "loading" ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            Submit request
+            Place investment
           </button>
         ) : (
           <button type="button" disabled={status === "loading"} onClick={goNext} className={`${navButtonClass} bg-[var(--brand)] text-white hover:-translate-y-1`}>
