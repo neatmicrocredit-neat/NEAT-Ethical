@@ -23,11 +23,8 @@ export default function GetStartedPage() {
             NEAT turns your goals into a practical investment path, then gives you the dashboard to monitor returns, impact, and milestones.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/auth/login" className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-2)] px-5 py-3 text-sm font-black text-[var(--ink)] transition hover:-translate-y-1">
-              Open dashboard <ArrowRight className="size-4" />
-            </Link>
-            <Link href="/calculator" className="rounded-full border border-white/25 px-5 py-3 text-sm font-black text-white transition hover:bg-white/10">
-              Try calculator
+            <Link href="/returns-calculator" className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-2)] px-5 py-3 text-sm font-black text-[var(--ink)] transition hover:-translate-y-1">
+              Model your returns <ArrowRight className="size-4" />
             </Link>
           </div>
         </section>
