@@ -6,13 +6,13 @@ import { useMemo, useState } from "react";
 
 const vehicles = {
   ethical: {
-    name: "Neat Ethical",
+    name: "Ethical Investments",
     rate: 0.24,
     monthlyRate: 0.02,
     summary: "A steady placement into Neat products with a flat 24% annual profit margin.",
   },
   funding: {
-    name: "Neat Funding",
+    name: "Ethical Funding",
     rate: 0.6,
     monthlyRate: 0.05,
     summary: "Capital placed into Neat Microfinance lending pools for SME loans, with added lending risk.",

@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { ArrowRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import PublicShell from "@/components/public-shell";
+import CallButton from "@/components/call-button";
 
 const contacts = [
   { icon: Mail, label: "Email", value: "hello@neatethicalinvestments.com" },
@@ -26,6 +27,7 @@ export default function ContactPage() {
             <Link href="/get-started" className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-1">
               Get started <ArrowRight className="size-4" />
             </Link>
+            <CallButton />
             <Link href="/calculator" className="rounded-full border border-[color:var(--line)] bg-white px-5 py-3 text-sm font-black text-[var(--ink)] transition hover:border-[var(--brand)]">
               View calculator
             </Link>

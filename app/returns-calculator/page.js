@@ -5,7 +5,7 @@ export default function ReturnsCalculatorPage() {
   return (
     <PublicShell
       eyebrow="Returns calculator"
-      title="Model Neat Ethical and Neat Funding returns."
+      title="Model Ethical Investments and Ethical Funding returns."
       description="Compare the 24% annual Neat Ethical vehicle with the 60% annual Neat Funding vehicle before you request a placement."
     >
       <InvestmentCalculator />

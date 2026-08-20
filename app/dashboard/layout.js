@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }) {
         <AppSidebar />
 
         <div className="flex-1">
-          <header className="border-b border-slate-200 bg-white/90 px-6 py-4 backdrop-blur">
+          <header className="border-b border-slate-200 bg-white/90 px-6 py-4 backdrop-blur sticky top-0 z-40">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <SidebarTrigger />

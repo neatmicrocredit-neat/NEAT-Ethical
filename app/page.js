@@ -6,6 +6,7 @@ import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AnimatableChild, AnimatableParent } from '@/components/animation-container';
+import CallButton from '@/components/call-button';
 
 
 const cards = [
@@ -98,6 +99,7 @@ export default function Home() {
               <TrendingUp className="size-4 text-[var(--brand)]" />
               Model returns
             </Link>
+            <CallButton />
           </div>
         </div>
       </section>
