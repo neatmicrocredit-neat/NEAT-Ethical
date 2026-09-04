@@ -43,6 +43,8 @@ function LoginForm() {
     }
 
     document.cookie = "auth=true; path=/; max-age=86400; SameSite=Lax";
+    // The dashboard shell shows who is signed in and stamps it on messages.
+    document.cookie = `admin_email=${encodeURIComponent(data.user.email || "")}; path=/; max-age=86400; SameSite=Lax`;
     router.push(redirectTo);
   }
 

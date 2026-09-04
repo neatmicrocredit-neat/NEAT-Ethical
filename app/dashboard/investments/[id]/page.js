@@ -1,153 +1,213 @@
 import Link from "next/link";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Button } from "@/components/ui/button";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Banknote, MessageSquarePlus, Pencil, RefreshCw } from "lucide-react";
 
-export default async function InvestmentDetailPage({ params }) {
+import { deleteInvestment, updateInvestment } from "@/app/dashboard/actions";
+import { loadCustomerById, loadInvestmentByUuid } from "@/lib/dashboard-data";
+import { dateTime, fullName, money, relativeTime, shortDate } from "@/lib/format";
+import { deriveStatus, endOf, projectInvestment, startOf } from "@/lib/investments";
+import { ChartCard, ColumnChart, DataTable } from "@/components/dashboard/charts";
+import { ConfirmDelete } from "@/components/dashboard/confirm-delete";
+import { InvestmentForm } from "@/components/dashboard/investment-form";
+import { Amount, Avatar, Field, Panel, PanelHeader, StatCard, StatusPill, buttonStyles } from "@/components/dashboard/ui";
+
+export const dynamic = "force-dynamic";
+
+export default async function InvestmentDetailPage({ params, searchParams }) {
   const { id } = await params;
-  const supabase = createSupabaseServerClient();
+  const { edit } = await searchParams;
 
-  const { data: investment, error: investmentError } = await supabase
-    .from("investments")
-    .select("*")
-    .eq("uuid", id)
-    .single();
+  const investment = await loadInvestmentByUuid(id);
+  if (!investment) notFound();
 
-  const { data: customer } = investment?.customer_id
-    ? await supabase
-        .from("customers")
-        .select("id, first_name, last_name, email, phone_number")
-        .eq("id", investment.customer_id)
-        .single()
-    : { data: null };
+  const customer = investment.customer_id ? await loadCustomerById(investment.customer_id) : null;
+  const projection = projectInvestment(investment);
+  const status = deriveStatus(investment);
+  const editing = edit === "1";
 
-  if (investmentError || !investment) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Investment</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Not found</h1>
-        </div>
-
-        
-        <div>
-          <Button className=" rounded-md">
-            <Link href="/dashboard/investments" className="text-sm font-medium text-white hover:text-white-300">
-              ← Back to investments
-            </Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const cashflow = projection.rows.map((row) => ({
+    key: `m${row.month}`,
+    label: `M${row.month}`,
+    full: row.date ? shortDate(row.date) : `Month ${row.month}`,
+    values: { profit: row.profitPaid, principal: row.principalPaid },
+  }));
 
   return (
     <div className="space-y-6">
-      <div>
-        <Button>
-          <Link href="/dashboard/investments" className="text-sm font-medium text-white hover:text-white-300">
-            ← Back to investments
-          </Link>
-        </Button>
-      </div>
-      
-      <div>
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Investment</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Investment #{id.slice(0, 8)}</h1>
-      </div>
+      <Link
+        href="/dashboard/investments"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--dash-ink-2)] transition hover:text-[var(--dash-ink)]"
+      >
+        <ArrowLeft className="size-4" />
+        Back to placements
+      </Link>
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Investment details</h2>
-            <div className="mt-6 grid gap-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Amount</p>
-                  <p className="mt-1 text-2xl font-semibold text-slate-900">₦{Number(investment.amount || 0).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Payout schedule</p>
-                  <p className="mt-1 text-lg text-slate-900">{investment.payout_schedule || "—"}</p>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Start date</p>
-                  <p className="mt-1 text-slate-900">{investment.start_date ? new Date(investment.start_date).toLocaleDateString() : "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">End date</p>
-                  <p className="mt-1 text-slate-900">{investment.end_date ? new Date(investment.end_date).toLocaleDateString() : "—"}</p>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Investment Vehicle</p>
-                  <p className="mt-1 text-slate-900">{new String(investment.vehicle).toLocaleUpperCase()}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Rollover</p>
-                  <p className="mt-1 text-slate-900">{investment.rollover ? "Enabled" : "Disabled"}</p>
-                </div>
-              </div>
-            </div>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--dash-muted)]">Placement</p>
+            <StatusPill status={status} />
+            {investment.rollover ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--dash-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--dash-accent)]">
+                <RefreshCw className="size-3" />
+                Rolls over
+              </span>
+            ) : null}
           </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Payout information</h2>
-            <div className="mt-6 space-y-4">
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Bank name</p>
-                <p className="mt-1 text-slate-900">{investment.payout_bank_name || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Account name</p>
-                <p className="mt-1 text-slate-900">{investment.payout_account_name || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Account number</p>
-                <p className="mt-1 font-mono text-sm text-slate-900">{investment.payout_account_number || "—"}</p>
-              </div>
-              {investment.other_instructions && (
-                <div className="mt-4 border-t border-slate-100 pt-4">
-                  <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{investment.other_instructions}</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-[var(--dash-ink)]">
+            {money(projection.principal)} · {projection.vehicle.label}
+          </h1>
+          <p className="mt-1.5 text-sm text-[var(--dash-ink-2)]">
+            {customer ? (
+              <>
+                Held by{" "}
+                <Link href={`/dashboard/customers/${customer.uuid}`} className="font-medium text-[var(--dash-accent)] hover:underline">
+                  {fullName(customer)}
+                </Link>
+                {" · "}
+              </>
+            ) : null}
+            {shortDate(startOf(investment))} – {shortDate(endOf(investment))} ({projection.months} months)
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm h-fit">
-          <h2 className="text-lg font-semibold text-slate-900">Customer</h2>
+        <div className="flex flex-wrap items-center gap-2">
           {customer ? (
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-sm font-medium text-slate-700">Name</p>
-                <p className="mt-1 text-slate-900">{customer.first_name} {customer.last_name}</p>
+            <Link href={`/dashboard/messages/new?customer=${customer.id}`} className={buttonStyles.secondary}>
+              <MessageSquarePlus className="size-4" />
+              Message
+            </Link>
+          ) : null}
+          <Link href={editing ? `/dashboard/investments/${id}` : `/dashboard/investments/${id}?edit=1`} className={buttonStyles.secondary}>
+            <Pencil className="size-4" />
+            {editing ? "Stop editing" : "Edit"}
+          </Link>
+        </div>
+      </header>
+
+      {editing ? (
+        <InvestmentForm
+          action={updateInvestment}
+          investment={investment}
+          customerId={investment.customer_id}
+          submitLabel="Save changes"
+          cancelHref={`/dashboard/investments/${id}`}
+        />
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Principal" value={money(projection.principal)} hint={`${projection.vehicle.label} · ${Math.round(projection.vehicle.monthlyRate * 100)}% monthly`} />
+        <StatCard
+          label={projection.rollover ? "First month profit" : "Monthly profit"}
+          value={money(projection.monthlyProfit)}
+          hint={projection.schedule === "monthly" ? "Paid out every month" : "Retained until maturity"}
+        />
+        <StatCard label="Total profit over term" value={money(projection.totalProfit)} hint={`${projection.months} months at ${Math.round(projection.vehicle.annualRate * 100)}% p.a.`} />
+        <StatCard
+          label="Due at maturity"
+          value={money(projection.principal + (projection.schedule === "maturity" ? projection.totalProfit : 0))}
+          hint={status === "matured" ? `Matured ${relativeTime(endOf(investment))}` : `Matures ${relativeTime(endOf(investment))}`}
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <ChartCard
+          title="Cash out by month"
+          subtitle="What this placement pays the customer over its term"
+          table={
+            <DataTable
+              head={["Month", "Profit paid", "Principal returned", "Balance held"]}
+              rows={projection.rows.map((row) => [
+                row.date ? shortDate(row.date) : `Month ${row.month}`,
+                money(row.profitPaid),
+                money(row.principalPaid),
+                money(row.balance),
+              ])}
+            />
+          }
+        >
+          <ColumnChart
+            data={cashflow}
+            series={[
+              { key: "profit", label: "Profit paid", color: "var(--series-1)" },
+              { key: "principal", label: "Principal returned", color: "var(--series-2)" },
+            ]}
+            format="money"
+            labelExtreme={false}
+          />
+        </ChartCard>
+
+        <div className="space-y-4">
+          <Panel>
+            <PanelHeader title="Payout account" />
+            <dl className="space-y-4 px-5 py-5">
+              <Field label="Bank" value={investment.payout_bank_name} />
+              <Field label="Account name" value={investment.payout_account_name} />
+              <Field label="Account number" value={investment.payout_account_number} mono />
+              <Field label="Arrangement" value={projection.schedule === "maturity" ? "Settled at maturity" : "Paid monthly"} />
+            </dl>
+          </Panel>
+
+          {customer ? (
+            <Panel>
+              <PanelHeader title="Customer" />
+              <div className="px-5 py-5">
+                <Link href={`/dashboard/customers/${customer.uuid}`} className="flex items-center gap-3">
+                  <Avatar customer={customer} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-[var(--dash-ink)]">{fullName(customer)}</span>
+                    <span className="block truncate text-xs text-[var(--dash-muted)]">{customer.email}</span>
+                  </span>
+                </Link>
+                <dl className="mt-5 space-y-4 border-t border-[var(--dash-line)] pt-5">
+                  <Field label="Phone" value={customer.phone_number} />
+                  <Field label="Location" value={[customer.lga, customer.state].filter(Boolean).join(", ")} />
+                  <Field label="Customer since" value={shortDate(customer.created_at)} />
+                </dl>
               </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Email</p>
-                <p className="mt-1 text-sm text-slate-600">{customer.email}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Phone</p>
-                <p className="mt-1 text-sm text-slate-600">{customer.phone_number || "—"}</p>
-              </div>
-              <Link href={`/dashboard/customers/${customer.id}`} className="mt-4 block text-sm font-medium text-slate-700 hover:text-slate-900">
-                View customer →
-              </Link>
-            </div>
+            </Panel>
           ) : (
-            <p className="mt-4 text-sm text-slate-600">Customer information unavailable</p>
+            <Panel>
+              <PanelHeader title="Customer" />
+              <p className="px-5 py-5 text-sm text-[var(--dash-ink-2)]">
+                This placement has no linked customer record (customer_id {String(investment.customer_id)}).
+              </p>
+            </Panel>
           )}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase text-slate-500">Created</p>
-        <p className="mt-2 text-slate-900">{new Date(investment.created_at).toLocaleString()}</p>
-      </div>
+      {investment.other_instructions ? (
+        <Panel>
+          <PanelHeader title="Notes" />
+          <p className="whitespace-pre-wrap px-5 py-5 text-sm leading-relaxed text-[var(--dash-ink-2)]">
+            {investment.other_instructions}
+          </p>
+        </Panel>
+      ) : null}
+
+      <Panel>
+        <PanelHeader title="Record" description={`Created ${dateTime(investment.created_at)}`} />
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-5">
+          <dl className="grid gap-6 sm:grid-cols-3">
+            <Field label="Reference" value={investment.uuid?.slice(0, 8)} mono />
+            <Field label="Internal id" value={String(investment.id)} mono />
+            <Field
+              label="Total returned"
+              value={<Amount><Banknote className="mr-1 inline size-3.5 text-[var(--dash-muted)]" />{money(projection.totalReturned)}</Amount>}
+            />
+          </dl>
+
+          <ConfirmDelete
+            action={deleteInvestment}
+            name="uuid"
+            value={investment.uuid}
+            label="Delete placement"
+            confirmLabel="Delete permanently"
+            warning="This cannot be undone."
+          />
+        </div>
+      </Panel>
     </div>
   );
 }

@@ -326,7 +326,7 @@ export default function InvestmentRequestForm() {
     }
 
     setStatus("success");
-    setMessage("Investment submitted. The NEAT team will contact you to complete processing.");
+    setMessage(result.warning || "Investment submitted. The NEAT team will contact you to complete processing.");
     setForm(seededState);
     setFiles({});
     setCurrentStep(0);

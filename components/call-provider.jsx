@@ -27,7 +27,14 @@ export function CallProvider({ children }) {
   const isConfigured = Boolean(PUBLIC_KEY && ASSISTANT_ID);
 
   useEffect(() => {
-    if (!isConfigured) return undefined;
+    if (!isConfigured) {
+      // The buttons still render (they just cannot dial) so a missing key never
+      // silently removes a CTA from the page.
+      console.warn(
+        "[call] NEXT_PUBLIC_VAPI_PUBLIC_KEY / NEXT_PUBLIC_VAPI_ASSISTANT_ID are not set — voice calls are disabled.",
+      );
+      return undefined;
+    }
 
     let cancelled = false;
 

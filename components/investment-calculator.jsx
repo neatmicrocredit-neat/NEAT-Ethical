@@ -180,7 +180,7 @@ export default function InvestmentCalculator() {
                 type="button"
                 onClick={() => setAmount(quick)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-black transition ${
-                  Number(amount) === quick ? "bg-[var(--brand-2)] text-[var(--ink)]" : "bg-white/14 text-white hover:bg-white/24"
+                  Number(amount) === quick ? "bg-[var(--brand-2)] text-white" : "bg-white/14 text-white hover:bg-white/24"
                 }`}
               >
                 {compactMoney(quick)}
@@ -355,8 +355,8 @@ export default function InvestmentCalculator() {
 
 function Stat({ label, value, highlight = false }) {
   return (
-    <div className={`min-w-0 rounded-lg p-4 backdrop-blur sm:p-5 ${highlight ? "bg-[var(--brand-2)] text-[var(--ink)]" : "bg-white/14 text-white"}`}>
-      <p className={`text-xs font-bold ${highlight ? "text-[var(--ink)]/70" : "text-white/65"}`}>{label}</p>
+    <div className={`min-w-0 rounded-lg p-4 backdrop-blur sm:p-5 ${highlight ? "bg-[var(--brand-2)] text-white" : "bg-white/14 text-white"}`}>
+      <p className={`text-xs font-bold ${highlight ? "text-white" : "text-white/65"}`}>{label}</p>
       <p className="mt-6 break-words text-xl font-black tabular-nums sm:text-2xl">{value}</p>
     </div>
   );
