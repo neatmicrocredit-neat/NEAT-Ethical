@@ -7,9 +7,9 @@ import PublicShell from "@/components/public-shell";
 export default function InvestmentRequestPage() {
   return (
     <PublicShell
-      eyebrow="Make an investment"
+      eyebrow=""
       title="Make a NEAT Ethical investment."
-      description="Give us the details needed to set up your placement. The team will follow up to confirm everything before any capital is committed."
+      description="Give us the details needed to set up your investment account. The team will follow up to confirm everything before any capital is committed."
     >
       <div className="grid gap-5 lg:grid-cols-[0.86fr_1.14fr]" style={{ alignItems: "flex-start" }}>
         <section className="rounded-lg bg-[var(--brand)] p-7 text-white shadow-[0_30px_80px_rgb(44_22_182_/_0.22)] sm:p-10 lg:sticky lg:top-6">
@@ -21,12 +21,12 @@ export default function InvestmentRequestPage() {
           <div className="mt-8 grid gap-3">
             <div className="rounded-lg bg-white/14 p-5">
               <p className="text-sm font-black">Ethical Investment</p>
-              <p className="mt-2 text-3xl font-black">24% p.a.</p>
+              <p className="mt-2 text-3xl font-black">2% p.m.</p>
               <p className="mt-1 text-xs font-bold text-white/68">2% monthly flat profit</p>
             </div>
             <div className="rounded-lg bg-white/14 p-5">
               <p className="text-sm font-black">Ethical Funding</p>
-              <p className="mt-2 text-3xl font-black">60% p.a.</p>
+              <p className="mt-2 text-3xl font-black">5% p.m.</p>
               <p className="mt-1 text-xs font-bold text-white/68">5% monthly flat profit with lending-pool risk</p>
             </div>
           </div>

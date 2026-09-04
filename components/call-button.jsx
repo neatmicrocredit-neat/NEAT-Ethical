@@ -10,9 +10,7 @@ import { useCall, useCallDuration } from "@/components/call-provider";
 // and their usages in app/layout.js, app/page.js and app/contact/page.js.
 
 export default function CallButton({ variant = "solid", className = "" }) {
-  const { status, toggle, isConfigured } = useCall();
-
-  if (!isConfigured) return null;
+  const { status, toggle } = useCall();
 
   const styles =
     status === "active"
@@ -45,11 +43,11 @@ export default function CallButton({ variant = "solid", className = "" }) {
  */
 export function CallDock() {
   const pathname = usePathname();
-  const { status, isConfigured } = useCall();
+  const { status } = useCall();
   const inCall = status === "active";
 
   // Hide on dashboard pages, same as the WhatsApp FAB
-  if (!isConfigured || pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/dashboard")) {
     return null;
   }
 

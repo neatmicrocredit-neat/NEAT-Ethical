@@ -1,42 +1,75 @@
-import Link from "next/link";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { loadBook } from "@/lib/dashboard-data";
+import { fullName, money } from "@/lib/format";
+import { groupByCustomer, kycCompleteness, topHolders } from "@/lib/analytics";
+import { summarizeBook } from "@/lib/investments";
+import { CustomerTable } from "@/components/dashboard/customer-table";
+import { PageHeader, StatCard } from "@/components/dashboard/ui";
 
-export default async function CustomersPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: customers, error } = await supabase
-    .from("customers")
-    .select("uuid, first_name, last_name, email, phone_number, created_at, id")
-    .order("created_at", { ascending: false });
+export const dynamic = "force-dynamic";
 
-  if (error) {
-    console.error("Error fetching customers:", error);
-  }
+export default async function CustomersPage({ searchParams }) {
+  const { q = "" } = await searchParams;
+  const now = new Date();
+  const { customers, investments } = await loadBook();
+
+  const grouped = groupByCustomer(customers, investments, now);
+  const summary = summarizeBook(investments, now);
+  const kyc = kycCompleteness(customers);
+  const holders = topHolders(grouped, 1);
+
+  // Flattened on the server so the client table never runs domain maths.
+  const rows = customers.map((customer) => {
+    const entry = grouped.byId.get(String(customer.id));
+    return {
+      uuid: customer.uuid,
+      name: fullName(customer),
+      email: customer.email || "",
+      phone: customer.phone_number || "",
+      state: customer.state || "",
+      reference: customer.neat_customer_id || "",
+      image: customer.image_url || null,
+      placements: entry?.summary.count ?? 0,
+      capital: entry?.summary.principal ?? 0,
+      status: entry?.status ?? "none",
+      joinedAt: customer.created_at,
+      joined: customer.created_at ? new Date(customer.created_at).toISOString().slice(0, 10) : "",
+    };
+  });
+
+  const investing = rows.filter((row) => row.placements > 0).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Customers</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Client portfolio overview</h1>
-        </div>
+      <PageHeader
+        eyebrow="Portfolio"
+        title="Customer directory"
+        description="Every customer on file, with the capital they have placed and where their portfolio stands today."
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Customers on file" value={customers.length.toLocaleString()} hint={`${investing} with a placement`} />
+        <StatCard label="Capital placed" value={money(summary.principal)} hint="Lifetime, all customers" />
+        <StatCard
+          label="Average per investor"
+          value={money(investing ? summary.principal / investing : 0)}
+          hint="Capital placed ÷ investing customers"
+        />
+        <StatCard
+          label="KYC complete"
+          value={`${Math.round(kyc.rate)}%`}
+          hint={`${kyc.complete} of ${kyc.total} fully documented`}
+          tone={kyc.rate >= 80 ? "active" : "pending"}
+        />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[1.4fr_1.2fr_1.2fr_0.7fr] border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-          <span>Name</span>
-          <span>Email</span>
-          <span>Phone</span>
-          <span>Joined</span>
-        </div>
-        {(customers || []).map((customer) => (
-          <Link key={customer.uuid} href={`/dashboard/customers/${customer.uuid}`} className="grid grid-cols-[1.4fr_1.2fr_1.2fr_0.7fr] border-b border-slate-100 px-4 py-4 text-sm text-slate-600 last:border-b-0 hover:bg-slate-50">
-            <span className="font-medium text-slate-900">{customer.first_name} {customer.last_name}</span>
-            <span>{customer.email}</span>
-            <span>{customer.phone_number || "—"}</span>
-            <span>{new Date(customer.created_at).toLocaleDateString()}</span>
-          </Link>
-        ))}
-      </div>
+      {holders.rows[0] ? (
+        <p className="text-xs text-[var(--dash-muted)]">
+          Largest single holder: <span className="font-medium text-[var(--dash-ink-2)]">{holders.rows[0].name}</span> at{" "}
+          {money(holders.rows[0].value)} — {Math.round(holders.rows[0].share)}% of the book.
+        </p>
+      ) : null}
+
+      <CustomerTable rows={rows} initialSearch={q} />
     </div>
   );
 }

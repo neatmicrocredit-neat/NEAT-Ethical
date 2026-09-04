@@ -136,6 +136,42 @@
     font-family: var(--font-geist-mono), monospace;
   }
 }
+
+.message-content,
+.message-content * {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.message-content p {
+  margin: 0 0 0.625rem;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-content ul,
+.message-content ol {
+  margin: 0.5rem 0 0.625rem 1.25rem;
+  padding: 0;
+}
+
+.message-content li {
+  margin: 0.1875rem 0;
+}
+
+.message-content blockquote {
+  margin: 0.625rem 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--dash-line, #b9cee5);
+}
+
+.message-content a {
+  color: var(--dash-accent, #0057a6);
+  text-decoration: underline;
+}
 .landing-theme {
   --brand: #0057a6; /* #002b58; */ /* --brand: #2c16b6 */
   --brand-2: #002b58; /* #d9950c;*/ /* --brand-2: #f8f512 */
@@ -299,3 +335,50 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------------------------------------------------------------- dashboard
+   Admin console theme. Scoped to `.dash` so it never leaks into the public
+   marketing pages, which run on `.landing-theme`.
+
+   The chart slots are the validated data-viz palette. Do not re-order or add
+   a ninth slot: the ordering is the colourblind-safety mechanism, and the set
+   was validated against the `--dash-surface` white below. Aqua and yellow sit
+   under 3:1 on white by design, so every chart that uses them ships direct
+   labels and a table view. */
+.dash {
+  --dash-page: #f7f8fa;
+  --dash-surface: #ffffff;
+  --dash-raised: #fbfcfd;
+  --dash-ink: #0b1120;
+  --dash-ink-2: #475569;
+  --dash-muted: #7c8798;
+  --dash-line: #e5e9f0;
+  --dash-grid: #eef1f6;
+  --dash-accent: #0057a6;
+  --dash-accent-soft: #eaf2fb;
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-good-ink: #006300;
+}
+
+/* Chart chrome. Gridlines and axis rules are solid hairlines one step off the
+   surface — never dashed. */
+.dash-grid-line { stroke: var(--dash-grid); stroke-width: 1; }
+.dash-axis-line { stroke: #c9d2de; stroke-width: 1; }
+.dash-axis-text { fill: var(--dash-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+.dash-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.dash-scroll::-webkit-scrollbar-thumb { background: #d3dae4; border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+.dash-scroll::-webkit-scrollbar-track { background: transparent; }

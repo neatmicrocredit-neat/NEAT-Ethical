@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { sendInvestmentEmails } from "@/lib/email";
 
 const emptyToNull = (value) => {
   if (value === undefined || value === null) return null;
@@ -73,7 +74,7 @@ export async function POST(request) {
     const { data: customer, error: customerError } = await supabase
       .from("customers")
       .insert(customerPayload)
-      .select("id")
+      .select("id, uuid, first_name, last_name, email, phone_number")
       .single();
 
     if (customerError) {
@@ -91,23 +92,32 @@ export async function POST(request) {
       payout_bank_name: emptyToNull(formData.get("payout_bank_name")),
       payout_account_name: emptyToNull(formData.get("payout_account_name")),
       payout_account_number: emptyToNull(formData.get("payout_account_number")),
-      other_instructions: emptyToNull(
-        [
-          `Vehicle: ${formData.get("vehicle") === "funding" ? "Neat Funding" : "Neat Ethical"}`,
-          emptyToNull(formData.get("other_instructions")),
-        ].filter(Boolean).join("\n")
-      ),
+      // The vehicle has its own column, and the dashboard's analytics group on
+      // it — writing it into the notes text instead left every placement
+      // classified as the default.
+      vehicle: formData.get("vehicle") === "funding" ? "funding" : "ethical",
+      other_instructions: emptyToNull(formData.get("other_instructions")),
     };
 
     const { data: investment, error: investmentError } = await supabase
       .from("investments")
       .insert(investmentPayload)
-      .select("id")
+      .select("id, uuid, amount, vehicle")
       .single();
 
     if (investmentError) {
       console.error("Investment insert error:", investmentError);
       return Response.json({ error: `Failed to create investment: ${investmentError.message}` }, { status: 500 });
+    }
+
+    try {
+      await sendInvestmentEmails({ customer, investment });
+    } catch (emailError) {
+      console.error("Investment email error:", emailError);
+      return Response.json(
+        { customer_id: customer.id, investment_id: investment.id, warning: "Your request was saved, but confirmation email could not be sent." },
+        { status: 201 },
+      );
     }
 
     return Response.json({ customer_id: customer.id, investment_id: investment.id }, { status: 201 });
