@@ -1,9 +1,12 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
+
 import { loadBook } from "@/lib/dashboard-data";
 import { fullName, money } from "@/lib/format";
 import { groupByCustomer, kycCompleteness, topHolders } from "@/lib/analytics";
 import { summarizeBook } from "@/lib/investments";
 import { CustomerTable } from "@/components/dashboard/customer-table";
-import { PageHeader, StatCard } from "@/components/dashboard/ui";
+import { PageHeader, StatCard, buttonStyles } from "@/components/dashboard/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +47,12 @@ export default async function CustomersPage({ searchParams }) {
         eyebrow="Portfolio"
         title="Customer directory"
         description="Every customer on file, with the capital they have placed and where their portfolio stands today."
+        actions={
+          <Link href="/dashboard/customers/new" className={buttonStyles.primary}>
+            <Plus className="size-4" />
+            Add customer
+          </Link>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

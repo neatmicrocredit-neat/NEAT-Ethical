@@ -3,29 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireAdmin } from "@/lib/auth";
+import { requireCapability } from "@/lib/auth";
+import { recordAudit, diff } from "@/lib/audit";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { VEHICLES } from "@/lib/investments";
+import { fullName, money } from "@/lib/format";
+import { fail, number, ok, text } from "@/lib/form";
 import { appendMessage, dispatchMessage, ensureThread, setThreadStatus } from "@/lib/messaging";
 import sanitizeHtml from "sanitize-html";
 import { cleanReceivedText, getReceivedEmail, listReceivedEmails, plainTextToHtml } from "@/lib/email";
-
-const ok = (message, extra = {}) => ({ ok: true, error: null, message, ...extra });
-const fail = (error) => ({ ok: false, error, message: null });
-
-function text(formData, field) {
-  const value = formData.get(field);
-  if (value === null || value === undefined) return null;
-  const trimmed = String(value).trim();
-  return trimmed ? trimmed : null;
-}
-
-function number(formData, field) {
-  const raw = text(formData, field);
-  if (raw === null) return null;
-  const parsed = Number(String(raw).replace(/[^\d.-]/g, ""));
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 async function getEmailAttachments(formData) {
   const files = formData.getAll("attachments").filter((file) => file instanceof File && file.size > 0);
@@ -72,9 +58,21 @@ function investmentPayload(formData) {
   };
 }
 
+/** Placement changes ripple into the payout run and the approvals queue. */
+function revalidatePlacements(uuid) {
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/investments");
+  revalidatePath("/dashboard/customers");
+  revalidatePath("/dashboard/payouts");
+  revalidatePath("/dashboard/approvals");
+  revalidatePath("/dashboard/analytics");
+  if (uuid) revalidatePath(`/dashboard/investments/${uuid}`);
+}
+
 export async function createInvestment(_prevState, formData) {
+  let member;
   try {
-    await requireAdmin();
+    member = await requireCapability("investments.write");
   } catch (error) {
     return fail(error.message);
   }
@@ -89,20 +87,29 @@ export async function createInvestment(_prevState, formData) {
   const { data, error } = await supabase
     .from("investments")
     .insert({ ...payload, customer_id: customerId })
-    .select("uuid")
+    .select("id, uuid")
     .single();
 
   if (error) return fail(`Could not create the placement: ${error.message}`);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/investments");
-  revalidatePath("/dashboard/customers");
+  await recordAudit({
+    actor: member.email,
+    action: "create",
+    entity: "investment",
+    entityId: data.id,
+    entityLabel: `${money(payload.amount)} placement`,
+    summary: `Placement created against the ${VEHICLES[payload.vehicle]?.label || payload.vehicle} vehicle.`,
+    changes: payload,
+  });
+
+  revalidatePlacements(data.uuid);
   redirect(`/dashboard/investments/${data.uuid}`);
 }
 
 export async function updateInvestment(_prevState, formData) {
+  let member;
   try {
-    await requireAdmin();
+    member = await requireCapability("investments.write");
   } catch (error) {
     return fail(error.message);
   }
@@ -114,28 +121,49 @@ export async function updateInvestment(_prevState, formData) {
   if (errors.length) return fail(errors[0]);
 
   const supabase = createSupabaseServerClient();
+  const { data: previous } = await supabase.from("investments").select("*").eq("uuid", uuid).maybeSingle();
+  if (!previous) return fail("That placement no longer exists.");
+
   const { error } = await supabase.from("investments").update(payload).eq("uuid", uuid);
   if (error) return fail(`Could not save the placement: ${error.message}`);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/investments");
-  revalidatePath(`/dashboard/investments/${uuid}`);
-  revalidatePath("/dashboard/customers");
+  await recordAudit({
+    actor: member.email,
+    action: "update",
+    entity: "investment",
+    entityId: previous.id,
+    entityLabel: `${money(payload.amount)} placement`,
+    summary: "Placement terms amended.",
+    changes: diff(previous, payload),
+  });
+
+  revalidatePlacements(uuid);
   return ok("Placement updated.");
 }
 
 export async function deleteInvestment(formData) {
-  await requireAdmin();
+  const member = await requireCapability("investments.write");
 
   const uuid = String(formData.get("uuid") || "");
   if (!uuid) return;
 
   const supabase = createSupabaseServerClient();
+  const { data: previous } = await supabase.from("investments").select("*").eq("uuid", uuid).maybeSingle();
   await supabase.from("investments").delete().eq("uuid", uuid);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/investments");
-  revalidatePath("/dashboard/customers");
+  if (previous) {
+    await recordAudit({
+      actor: member.email,
+      action: "delete",
+      entity: "investment",
+      entityId: previous.id,
+      entityLabel: `${money(previous.amount)} placement`,
+      summary: "Placement deleted, along with its payout history.",
+      changes: previous,
+    });
+  }
+
+  revalidatePlacements();
   redirect("/dashboard/investments");
 }
 
@@ -160,9 +188,45 @@ const CUSTOMER_FIELDS = [
   "neat_customer_id",
 ];
 
-export async function updateCustomer(_prevState, formData) {
+export async function createCustomer(_prevState, formData) {
+  let member;
   try {
-    await requireAdmin();
+    member = await requireCapability("customers.write");
+  } catch (error) {
+    return fail(error.message);
+  }
+
+  const payload = Object.fromEntries(CUSTOMER_FIELDS.map((field) => [field, text(formData, field)]));
+  if (!payload.first_name || !payload.last_name) return fail("First and last name are required.");
+  if (!payload.email) return fail("An email address is required.");
+  if (!payload.phone_number) return fail("A phone number is required.");
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase.from("customers").insert(payload).select("id, uuid").single();
+  if (error) {
+    if (error.code === "23505") return fail("A customer with that email already exists.");
+    return fail(`Could not create the customer: ${error.message}`);
+  }
+
+  await recordAudit({
+    actor: member.email,
+    action: "create",
+    entity: "customer",
+    entityId: data.id,
+    entityLabel: fullName(payload),
+    summary: "Customer record created.",
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/customers");
+  revalidatePath("/dashboard/compliance");
+  redirect(`/dashboard/customers/${data.uuid}`);
+}
+
+export async function updateCustomer(_prevState, formData) {
+  let member;
+  try {
+    member = await requireCapability("customers.write");
   } catch (error) {
     return fail(error.message);
   }
@@ -176,10 +240,24 @@ export async function updateCustomer(_prevState, formData) {
   if (!payload.phone_number) return fail("A phone number is required.");
 
   const supabase = createSupabaseServerClient();
+  const { data: previous } = await supabase.from("customers").select("*").eq("uuid", uuid).maybeSingle();
+  if (!previous) return fail("That customer no longer exists.");
+
   const { error } = await supabase.from("customers").update(payload).eq("uuid", uuid);
   if (error) return fail(`Could not save the customer: ${error.message}`);
 
+  await recordAudit({
+    actor: member.email,
+    action: "update",
+    entity: "customer",
+    entityId: previous.id,
+    entityLabel: fullName(payload),
+    summary: "Customer details updated.",
+    changes: diff(previous, payload),
+  });
+
   revalidatePath("/dashboard/customers");
+  revalidatePath("/dashboard/compliance");
   revalidatePath(`/dashboard/customers/${uuid}`);
   return ok("Customer details updated.");
 }
@@ -189,7 +267,7 @@ export async function updateCustomer(_prevState, formData) {
 export async function sendMessage(_prevState, formData) {
   let admin;
   try {
-    admin = await requireAdmin();
+    admin = await requireCapability("messages.write");
   } catch (error) {
     return fail(error.message);
   }
@@ -282,7 +360,7 @@ export async function sendMessage(_prevState, formData) {
 
 export async function resendMessage(_prevState, formData) {
   try {
-    await requireAdmin();
+    await requireCapability("messages.write");
   } catch (error) {
     return fail(error.message);
   }
@@ -339,7 +417,7 @@ function emailSubject(value) {
 
 export async function syncReceivedMessages() {
   try {
-    await requireAdmin();
+    await requireCapability("messages.write");
   } catch (error) {
     return fail(error.message);
   }
@@ -414,7 +492,7 @@ export async function syncReceivedMessages() {
 }
 
 export async function updateThreadStatus(formData) {
-  await requireAdmin();
+  await requireCapability("messages.write");
 
   const threadId = Number(formData.get("thread_id"));
   const status = String(formData.get("status") || "open");

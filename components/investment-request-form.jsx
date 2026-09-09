@@ -475,8 +475,8 @@ export default function InvestmentRequestForm() {
                     onChange={updateField}
                     label="Select a vehicle"
                     options={[
-                      { value: "ethical", label: "Neat Ethical - 24% p.a." },
-                      { value: "funding", label: "Neat Funding - 60% p.a." },
+                      { value: "ethical", label: "Ethical Investments - 24% p.a." },
+                      { value: "funding", label: "Ethical Funding - 60% p.a." },
                     ]}
                   />
                 </Field>
@@ -554,7 +554,7 @@ export default function InvestmentRequestForm() {
                 <AccordionTrigger>Investment details</AccordionTrigger>
                 <AccordionContent>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <ReviewRow label="Vehicle" value={form.vehicle === "funding" ? "Neat Funding" : "Neat Ethical"} />
+                    <ReviewRow label="Vehicle" value={form.vehicle === "funding" ? "Ethical Funding" : "Ethical Investments"} />
                     <ReviewRow label="Amount" value={formatMoney(form.amount)} />
                     <ReviewRow label="Start date" value={displayValue(form.start_date)} />
                     <ReviewRow label="End date" value={displayValue(form.end_date)} />

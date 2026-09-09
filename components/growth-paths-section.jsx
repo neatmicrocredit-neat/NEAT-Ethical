@@ -8,7 +8,7 @@ import { Reveal, RevealGroup, useAmbientAnimation } from "@/components/reveal";
 const paths = [
   {
     title: "Take profit monthly",
-    route: "Neat Ethical",
+    route: "Ethical Investments",
     rate: "2%",
     rateNote: "monthly flat profit",
     detail: "Draw your profit as it accrues and leave the capital placed. Suited to investors who want the return in hand each cycle.",
@@ -17,7 +17,7 @@ const paths = [
   },
   {
     title: "Reinvest and compound",
-    route: "Neat Ethical or Neat Funding",
+    route: "Ethical Investments or Ethical Funding",
     rate: "Roll over",
     rateNote: "profit back into capital",
     detail: "Leave each payout in place so the next cycle is calculated on a larger base. The calculator shows what that looks like over time.",
@@ -26,7 +26,7 @@ const paths = [
   },
   {
     title: "Fund SMEs directly",
-    route: "Neat Funding",
+    route: "Ethical Funding",
     rate: "5%",
     rateNote: "monthly flat profit",
     detail: "Capital goes into Neat Microfinance SME lending pools. Higher return, with the lending exposure explained before you commit.",
@@ -49,7 +49,7 @@ export default function GrowthPathsSection() {
             </Reveal>
           </div>
           <Reveal as="p" className="max-w-xl text-base font-semibold leading-7 text-[var(--muted-ink)]">
-            The same two NEAT routes can be shaped around what you need &mdash; income now, compounding later, or direct SME exposure. Pick the shape first, then place your investment.
+            The same two routes can be shaped around what you need &mdash; income now, compounding later, or direct SME exposure. Pick the shape first, then place your investment.
           </Reveal>
         </div>
 

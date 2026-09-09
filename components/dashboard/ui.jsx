@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight, MessagesSquare, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Database, MessagesSquare, Minus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { initials, percent } from "@/lib/format";
@@ -94,17 +94,55 @@ export function Delta({ value, label, upIsGood = true }) {
   );
 }
 
+const GOOD = { dot: "var(--status-good)", className: "bg-[#eaf7ea] text-[#046004]" };
+const WARN = { dot: "var(--status-warning)", className: "bg-[#fdf4e0] text-[#7a5600]" };
+const BAD = { dot: "var(--status-critical)", className: "bg-[#fdeced] text-[#96201f]" };
+const MUTED = { dot: "#94a3b8", className: "bg-[#f1f4f8] text-[#475569]" };
+const INFO = { dot: "var(--series-1)", className: "bg-[#eaf2fb] text-[#154a86]" };
+
 const STATUS_STYLES = {
-  active: { dot: "var(--status-good)", className: "bg-[#eaf7ea] text-[#046004]", label: "Active" },
-  pending: { dot: "var(--status-warning)", className: "bg-[#fdf4e0] text-[#7a5600]", label: "Pending" },
-  matured: { dot: "#94a3b8", className: "bg-[#f1f4f8] text-[#475569]", label: "Matured" },
+  active: { ...GOOD, label: "Active" },
+  pending: { ...WARN, label: "Pending" },
+  matured: { ...MUTED, label: "Matured" },
   none: { dot: "#cbd5e1", className: "bg-[#f1f4f8] text-[#7c8798]", label: "No placements" },
-  open: { dot: "var(--series-1)", className: "bg-[#eaf2fb] text-[#154a86]", label: "Open" },
-  awaiting: { dot: "var(--status-warning)", className: "bg-[#fdf4e0] text-[#7a5600]", label: "Awaiting reply" },
-  closed: { dot: "#94a3b8", className: "bg-[#f1f4f8] text-[#475569]", label: "Closed" },
-  queued: { dot: "var(--status-warning)", className: "bg-[#fdf4e0] text-[#7a5600]", label: "Queued" },
-  sent: { dot: "var(--status-good)", className: "bg-[#eaf7ea] text-[#046004]", label: "Sent" },
-  failed: { dot: "var(--status-critical)", className: "bg-[#fdeced] text-[#96201f]", label: "Failed" },
+  open: { ...INFO, label: "Open" },
+  awaiting: { ...WARN, label: "Awaiting reply" },
+  closed: { ...MUTED, label: "Closed" },
+  queued: { ...WARN, label: "Queued" },
+  sent: { ...GOOD, label: "Sent" },
+  failed: { ...BAD, label: "Failed" },
+
+  /* placement lifecycle */
+  draft: { dot: "#cbd5e1", className: "bg-[#f1f4f8] text-[#7c8798]", label: "Draft" },
+  approved: { ...INFO, label: "Approved" },
+  scheduled: { ...WARN, label: "Starts later" },
+  rejected: { ...BAD, label: "Rejected" },
+  cancelled: { ...MUTED, label: "Cancelled" },
+  defaulted: { ...BAD, label: "Defaulted" },
+
+  /* ledger */
+  cleared: { ...GOOD, label: "Cleared" },
+  in: { ...GOOD, label: "In" },
+  out: { ...INFO, label: "Out" },
+  arrears: { ...BAD, label: "In arrears" },
+  settled: { ...GOOD, label: "Settled" },
+
+  /* compliance & documents */
+  verified: { ...GOOD, label: "Verified" },
+  unverified: { ...WARN, label: "Unverified" },
+  in_review: { ...WARN, label: "In review" },
+  expired: { ...MUTED, label: "Expired" },
+  low: { ...GOOD, label: "Low risk" },
+  medium: { ...WARN, label: "Medium risk" },
+  high: { ...BAD, label: "High risk" },
+  unrated: { ...MUTED, label: "Unrated" },
+
+  /* tasks */
+  in_progress: { ...INFO, label: "In progress" },
+  done: { ...MUTED, label: "Done" },
+  overdue: { ...BAD, label: "Overdue" },
+  urgent: { ...BAD, label: "Urgent" },
+  normal: { ...MUTED, label: "Normal" },
 };
 
 /**
@@ -199,6 +237,38 @@ export function MessagingSetupNotice({ className }) {
           <code className="rounded bg-[var(--dash-line)] px-1 py-0.5 font-mono text-[11px]">supabase/migrations/0001_messaging.sql</code>{" "}
           to create the <code className="font-mono text-[11px]">message_threads</code> and{" "}
           <code className="font-mono text-[11px]">messages</code> tables, then reload.
+        </span>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Shown wherever a feature's migration has not been applied yet, so the screen
+ * degrades to an instruction rather than an error.
+ */
+export function SetupNotice({ migration, feature, tables = [], className }) {
+  return (
+    <div className={cn("rounded-2xl bg-[var(--dash-surface)] p-5 ring-1 ring-[var(--dash-line)]", className)}>
+      <p className="flex items-start gap-2 rounded-xl bg-[var(--dash-page)] px-3.5 py-3 text-xs leading-relaxed text-[var(--dash-ink-2)]">
+        <Database className="mt-0.5 size-4 shrink-0 text-[var(--dash-muted)]" />
+        <span>
+          {feature} is not switched on for this project yet. Apply{" "}
+          <code className="rounded bg-[var(--dash-line)] px-1 py-0.5 font-mono text-[11px]">{migration}</code>
+          {tables.length ? (
+            <>
+              {" "}
+              to create the{" "}
+              {tables.map((table, index) => (
+                <span key={table}>
+                  <code className="font-mono text-[11px]">{table}</code>
+                  {index < tables.length - 2 ? ", " : index === tables.length - 2 ? " and " : ""}
+                </span>
+              ))}
+              {tables.length === 1 ? " table" : " tables"}
+            </>
+          ) : null}
+          , then reload.
         </span>
       </p>
     </div>

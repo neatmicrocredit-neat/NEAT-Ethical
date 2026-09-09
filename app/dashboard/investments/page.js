@@ -48,7 +48,7 @@ export default async function InvestmentsPage({ searchParams }) {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Portfolio"
-        title="Placements"
+        title="Investments"
         description="Every investment on the book, with its term, payout arrangement and projected profit."
         actions={
           <Link href="/dashboard/investments/new" className={buttonStyles.primary}>

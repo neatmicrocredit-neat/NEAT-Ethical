@@ -24,12 +24,12 @@ const cards = [
 
 const investmentVehicles = [
   {
-    name: "Neat Ethical",
+    name: "Ethical Investments",
     rate: "24% p.a.",
     detail: "2% monthly flat profit for investors who want a steadier ethical placement with clear documentation.",
   },
   {
-    name: "Neat Funding",
+    name: "Ethical Funding",
     rate: "60% p.a.",
     detail: "5% monthly flat profit through Neat Microfinance SME lending pools, with lending exposure explained upfront.",
   },
@@ -119,7 +119,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
             className="mx-auto mt-6 max-w-2xl text-pretty text-lg font-medium leading-8 text-[var(--ink)]">
-            Invest in Ethical Investment at 24% p.a. or Ethical Funding at 60% p.a., then track your placement, projected profit, and next steps with clarity.
+            Invest in Ethical Investments at 24% p.a. or Ethical Funding at 60% p.a., then track your placement, projected profit, and next steps with clarity.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -146,7 +146,7 @@ export default function Home() {
         <RevealGroup className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <Reveal as="p" className="text-sm font-black uppercase text-[var(--brand)]">The investment</Reveal>
-            <Reveal as="h2" className="mt-3 text-4xl leading-none sm:text-5xl">Two NEAT routes, one clear way to invest.</Reveal>
+            <Reveal as="h2" className="mt-3 text-4xl leading-none sm:text-5xl">Two routes, one clear way to invest.</Reveal>
             <Reveal as="p" className="mt-6 max-w-xl text-sm font-semibold leading-7 text-[var(--muted-ink)]">
               NEAT gives investors a plain-language way to compare return profiles before the team confirms documentation, dates, payout details, and risk notes.
             </Reveal>

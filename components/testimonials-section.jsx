@@ -8,7 +8,7 @@ const testimonials = [
   {
     quote: "It helped me understand where my money goes.",
     author: "NEAT investor",
-    context: "Neat Ethical placement",
+    context: "Ethical Investments placement",
     featured: true,
   },
   {
@@ -19,7 +19,7 @@ const testimonials = [
   {
     quote: "I can grow my portfolio without compromising my values.",
     author: "NEAT investor",
-    context: "Neat Funding placement",
+    context: "Ethical Funding placement",
   },
 ];
 

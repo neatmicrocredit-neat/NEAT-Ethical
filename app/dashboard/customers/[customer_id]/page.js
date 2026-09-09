@@ -3,18 +3,46 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Briefcase, IdCard, Pencil, Plus } from "lucide-react";
 
 import { sendMessage, updateCustomer } from "@/app/dashboard/actions";
+import { setComplianceStatus } from "@/app/dashboard/compliance/actions";
+import { deleteDocument, reviewDocument, uploadCustomerDocument } from "@/app/dashboard/documents/actions";
+import { createTask, deleteTask, setTaskStatus } from "@/app/dashboard/tasks/actions";
+import { hasCapability } from "@/lib/auth";
+import { loadAuditFor } from "@/lib/audit";
+import { complianceFor } from "@/lib/compliance";
 import { loadCustomerByUuid, loadInvestmentsForCustomer } from "@/lib/dashboard-data";
+import { DOCUMENT_KINDS, effectiveStatus, loadDocumentsForCustomer } from "@/lib/documents";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getThreadsForCustomer } from "@/lib/messaging";
 import { dayMonth, fullName, money, relativeTime, shortDate } from "@/lib/format";
-import { deriveStatus, endOf, projectInvestment, startOf, summarizeBook } from "@/lib/investments";
+import { endOf, projectInvestment, startOf, summarizeBook } from "@/lib/investments";
+import {
+  PAYMENT_METHODS,
+  TRANSACTION_KINDS,
+  groupTransactionsByInvestment,
+  ledgerSummary,
+  loadTransactionsForCustomer,
+  settlementFor,
+} from "@/lib/ledger";
+import { isOverdue, loadTasksForCustomer, sortForWork } from "@/lib/tasks";
+import { lifecycle } from "@/lib/workflow";
 import { bookValueTrend, payoutForecast, vehicleAllocation } from "@/lib/analytics";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { AreaTrend, ChartCard, ColumnChart, DataTable, Legend, SplitBar } from "@/components/dashboard/charts";
+import { CompliancePanel } from "@/components/dashboard/compliance-panel";
 import { CustomerForm } from "@/components/dashboard/customer-form";
+import { DocumentVault } from "@/components/dashboard/document-vault";
 import { MessageComposer } from "@/components/dashboard/message-composer";
+import { TaskBoard } from "@/components/dashboard/task-board";
+import { TransactionTable } from "@/components/dashboard/transaction-table";
 import { Amount, Avatar, EmptyState, Field, MessagingSetupNotice, Panel, PanelHeader, StatCard, StatusPill, buttonStyles } from "@/components/dashboard/ui";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }) {
+  const { customer_id } = await params;
+  const customer = await loadCustomerByUuid(customer_id);
+  return { title: customer ? `${fullName(customer)} · Admin console` : "Customer · Admin console" };
+}
 
 export default async function CustomerDetailPage({ params, searchParams }) {
   const { customer_id } = await params;
@@ -23,19 +51,90 @@ export default async function CustomerDetailPage({ params, searchParams }) {
   const customer = await loadCustomerByUuid(customer_id);
   if (!customer) notFound();
 
+  const now = new Date();
+
   // investments.customer_id is the bigint customers.id, never the uuid.
-  const investments = await loadInvestmentsForCustomer(customer.id);
+  const [investments, transactions, documents, tasks, activity, canVerify, canWriteDocs, canVerifyDocs, canWriteTasks, canReadLedger] =
+    await Promise.all([
+      loadInvestmentsForCustomer(customer.id),
+      loadTransactionsForCustomer(customer.id),
+      loadDocumentsForCustomer(customer.id),
+      loadTasksForCustomer(customer.id),
+      loadAuditFor("customer", customer.id),
+      hasCapability("customers.verify"),
+      hasCapability("documents.write"),
+      hasCapability("documents.verify"),
+      hasCapability("tasks.write"),
+      hasCapability("ledger.read"),
+    ]);
+
   const { threads, missing: messagingMissing } = await getThreadsForCustomer(createSupabaseServerClient(), customer.id, { channel: "email" });
 
-  const now = new Date();
   const summary = summarizeBook(investments, now);
   const trend = bookValueTrend(investments, 12, now);
   const forecast = payoutForecast(investments, 12, now);
   const allocation = vehicleAllocation(investments, now).filter((row) => row.value > 0);
+  const compliance = complianceFor(customer, documents, now);
+  const cash = ledgerSummary(transactions);
   const editing = edit === "1";
 
+  // Arrears across every placement this customer holds — the one number that
+  // says whether the relationship is in good standing.
+  const ledgerByInvestment = groupTransactionsByInvestment(transactions);
+  const arrears = investments.reduce(
+    (total, investment) => total + settlementFor(investment, ledgerByInvestment.get(String(investment.id)) || [], now).arrears,
+    0
+  );
+
+  const ledgerRows = transactions.map((transaction) => ({
+    uuid: transaction.uuid,
+    valueDate: transaction.value_date,
+    customer: fullName(customer),
+    vehicleLabel: null,
+    kind: transaction.kind,
+    kindLabel: TRANSACTION_KINDS[transaction.kind]?.label || transaction.kind,
+    direction: transaction.direction,
+    amount: Math.abs(Number(transaction.amount) || 0),
+    status: transaction.status,
+    methodLabel: PAYMENT_METHODS[transaction.method] || "",
+    reference: transaction.reference,
+    periodIndex: transaction.period_index,
+    note: transaction.note,
+    bank: transaction.bank_name,
+    accountName: transaction.account_name,
+  }));
+
+  const documentRows = documents.map((document) => ({
+    uuid: document.uuid,
+    title: document.title,
+    kindLabel: DOCUMENT_KINDS[document.kind]?.label || document.kind,
+    status: effectiveStatus(document, now),
+    customer: fullName(customer),
+    customerUuid: customer.uuid,
+    fileUrl: document.file_url,
+    note: document.note,
+    expiresOn: document.expires_on,
+    createdAt: document.created_at,
+    uploadedBy: document.uploaded_by,
+    reviewedBy: document.reviewed_by,
+    reviewedAt: document.reviewed_at,
+  }));
+
+  const taskRows = sortForWork(tasks, now).map((task) => ({
+    uuid: task.uuid,
+    title: task.title,
+    detail: task.detail,
+    status: task.status,
+    priority: task.priority,
+    dueOn: task.due_on,
+    assignee: task.assignee,
+    customer: fullName(customer),
+    customerUuid: customer.uuid,
+    overdue: isOverdue(task, now),
+  }));
+
   const nextMaturity = investments
-    .filter((investment) => deriveStatus(investment, now) !== "matured")
+    .filter((investment) => lifecycle(investment, now).key === "active")
     .map((investment) => endOf(investment))
     .filter(Boolean)
     .sort((a, b) => a - b)[0];
@@ -65,6 +164,9 @@ export default async function CustomerDetailPage({ params, searchParams }) {
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-2xl font-semibold tracking-tight text-[var(--dash-ink)]">{fullName(customer)}</h1>
               <StatusPill status={portfolioStatus} />
+              <StatusPill status={compliance.status.key} label={compliance.status.label} />
+              {compliance.risk.key === "high" ? <StatusPill status="high" /> : null}
+              {arrears > 0.5 ? <StatusPill status="arrears" label={`${money(arrears)} in arrears`} /> : null}
             </div>
             <p className="mt-1 truncate text-sm text-[var(--dash-ink-2)]">
               {customer.email} · {customer.phone_number || "no phone on file"}
@@ -93,7 +195,12 @@ export default async function CustomerDetailPage({ params, searchParams }) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Capital placed" value={money(summary.principal)} hint={`${summary.count} placement${summary.count === 1 ? "" : "s"} all time`} />
         <StatCard label="Under management" value={money(summary.underManagement)} hint={`${summary.byStatus.active} active · ${summary.byStatus.pending} pending`} />
-        <StatCard label="Profit still owed" value={money(summary.outstandingProfit)} hint="Across unmatured placements" upIsGood={false} />
+        <StatCard
+          label="Paid to this customer"
+          value={money(cash.outflow)}
+          hint={arrears > 0.5 ? `${money(arrears)} in arrears` : "Nothing overdue"}
+          tone={arrears > 0.5 ? "pending" : undefined}
+        />
         <StatCard
           label="Next maturity"
           value={nextMaturity ? shortDate(nextMaturity) : "—"}
@@ -107,7 +214,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
             <>
               <ChartCard
                 title="Portfolio value"
-                subtitle="Principal held with NEAT over the last 12 months"
+                subtitle="Principal held over the last 12 months"
                 table={<DataTable head={["Month", "Principal held"]} rows={trend.map((row) => [row.full, money(row.value)])} />}
               >
                 <AreaTrend data={trend} format="money" height={200} label="Principal held" />
@@ -181,6 +288,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
                   <tbody className="divide-y divide-[var(--dash-line)]">
                     {investments.map((investment) => {
                       const projection = projectInvestment(investment);
+                      const state = lifecycle(investment, now);
                       return (
                         <tr key={investment.uuid} className="transition hover:bg-[var(--dash-page)]">
                           <td className="px-5 py-3">
@@ -198,7 +306,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
                           </td>
                           <td className="px-5 py-3 text-right"><Amount>{money(projection.principal)}</Amount></td>
                           <td className="px-5 py-3 text-right"><Amount>{money(projection.monthlyProfit)}</Amount></td>
-                          <td className="px-5 py-3 text-right"><StatusPill status={deriveStatus(investment, now)} /></td>
+                          <td className="px-5 py-3 text-right"><StatusPill status={state.tone} label={state.label} /></td>
                         </tr>
                       );
                     })}
@@ -219,6 +327,28 @@ export default async function CustomerDetailPage({ params, searchParams }) {
               />
             )}
           </Panel>
+
+          {canReadLedger && ledgerRows.length ? (
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-[var(--dash-ink)]">Statement</h2>
+              <TransactionTable rows={ledgerRows} kinds={Object.values(TRANSACTION_KINDS)} />
+            </section>
+          ) : null}
+
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-[var(--dash-ink)]">Documents</h2>
+            <DocumentVault
+              rows={documentRows}
+              uploadAction={uploadCustomerDocument}
+              reviewAction={reviewDocument}
+              deleteAction={deleteDocument}
+              canUpload={canWriteDocs}
+              canVerify={canVerifyDocs}
+              lockedCustomerId={customer.id}
+              lockedCustomerUuid={customer.uuid}
+              compact
+            />
+          </section>
 
           <Panel>
             <PanelHeader title="Profile" />
@@ -247,6 +377,22 @@ export default async function CustomerDetailPage({ params, searchParams }) {
         </div>
 
         <div className="space-y-4">
+          <CompliancePanel customer={customer} compliance={compliance} action={setComplianceStatus} canVerify={canVerify} />
+
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-[var(--dash-ink)]">Follow-ups</h2>
+            <TaskBoard
+              rows={taskRows}
+              createAction={createTask}
+              statusAction={setTaskStatus}
+              deleteAction={deleteTask}
+              canWrite={canWriteTasks}
+              lockedCustomerId={customer.id}
+              lockedCustomerUuid={customer.uuid}
+              compact
+            />
+          </section>
+
           <Panel>
             <PanelHeader
               title="Conversations"
@@ -280,7 +426,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
                     action={sendMessage}
                     customerId={customer.id}
                     customerName={customer.first_name}
-                    defaultSubject={`Your NEAT portfolio`}
+                    defaultSubject="Your investment portfolio"
                     redirectToThread
                     compact
                   />
@@ -320,6 +466,11 @@ export default async function CustomerDetailPage({ params, searchParams }) {
                 </div>
               )}
             </div>
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="History" description="Every change made to this record." />
+            <ActivityFeed entries={activity} />
           </Panel>
         </div>
       </div>

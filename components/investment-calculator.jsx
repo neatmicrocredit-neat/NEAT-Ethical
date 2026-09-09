@@ -7,7 +7,7 @@ import { ArrowRight, Banknote, CalendarRange, Info, RefreshCw, ShieldCheck, Wall
 const vehicles = {
   ethical: {
     name: "Ethical Investments",
-    short: "Neat Ethical",
+    short: "Ethical Investments",
     rate: 0.24,
     monthlyRate: 0.02,
     summary: "A steady placement into Neat products with a flat 24% annual profit margin.",
@@ -15,7 +15,7 @@ const vehicles = {
   },
   funding: {
     name: "Ethical Funding",
-    short: "Neat Funding",
+    short: "Ethical Funding",
     rate: 0.6,
     monthlyRate: 0.05,
     summary: "Capital placed into Neat Microfinance lending pools for SME loans, with added lending risk.",

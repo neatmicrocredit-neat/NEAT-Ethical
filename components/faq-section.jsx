@@ -10,7 +10,7 @@ const faqs = [
   {
     question: "What am I actually investing in?",
     answer:
-      "Two routes. Neat Ethical places your capital into Neat products at a flat 2% monthly profit (24% p.a.). Neat Funding places it into Neat Microfinance SME lending pools at a flat 5% monthly profit (60% p.a.), which carries the added lending exposure. You choose the route when you place your investment.",
+      "Two routes. Ethical Investments places your capital into Neat products at a flat 2% monthly profit (24% p.a.). Ethical Funding places it into Neat Microfinance SME lending pools at a flat 5% monthly profit (60% p.a.), which carries the added lending exposure. You choose the route when you place your investment.",
   },
   {
     question: "What is the minimum I can place?",
@@ -40,7 +40,7 @@ const faqs = [
   {
     question: "What are the risks?",
     answer:
-      "Projections shown on this site are flat calculations, not guarantees. Neat Funding in particular carries SME lending and repayment risk, because the capital sits in lending pools. The specific risk notes for your placement are shared with you before you fund it.",
+      "Projections shown on this site are flat calculations, not guarantees. Ethical Funding in particular carries SME lending and repayment risk, because the capital sits in lending pools. The specific risk notes for your placement are shared with you before you fund it.",
   },
   {
     question: "What makes it ethical?",
