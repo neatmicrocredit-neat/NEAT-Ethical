@@ -6,13 +6,14 @@ import { resendMessage, sendMessage, updateThreadStatus } from "@/app/dashboard/
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getThread } from "@/lib/messaging";
 import { loadCustomerById, loadInvestmentsForCustomer } from "@/lib/dashboard-data";
-import { dateTime, fullName, money, relativeTime } from "@/lib/format";
+import { dateTime, fullName, relativeTime } from "@/lib/format";
 import { summarizeBook } from "@/lib/investments";
+import { CustomerChip } from "@/components/dashboard/customer-chip";
 import { MessageComposer } from "@/components/dashboard/message-composer";
 import { ResendMessageButton } from "@/components/dashboard/resend-message-button";
 import sanitizeHtml from "sanitize-html";
 import { cleanReceivedText } from "@/lib/email";
-import { Avatar, Field, MessagingSetupNotice, Panel, PanelHeader, StatusPill, buttonStyles } from "@/components/dashboard/ui";
+import { MessagingSetupNotice, Panel, StatusPill, buttonStyles } from "@/components/dashboard/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -50,18 +51,8 @@ export default async function ThreadPage({ params }) {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--dash-muted)]">Conversation</p>
             <StatusPill status={thread.status} />
           </div>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-[var(--dash-ink)]">{thread.subject}</h1>
-          <p className="mt-1 text-sm text-[var(--dash-ink-2)]">
-            With{" "}
-            {customer ? (
-              <Link href={`/dashboard/customers/${customer.uuid}`} className="font-medium text-[var(--dash-accent)] hover:underline">
-                {fullName(customer)}
-              </Link>
-            ) : (
-              "an unknown customer"
-            )}{" "}
-            · started {relativeTime(thread.created_at)}
-          </p>
+          <h1 className="mt-1.5 break-words text-2xl font-semibold tracking-tight text-[var(--dash-ink)]">{thread.subject}</h1>
+          <p className="mt-1 text-sm text-[var(--dash-ink-2)]">Started {relativeTime(thread.created_at)}</p>
         </div>
 
         <form action={updateThreadStatus}>
@@ -75,58 +66,41 @@ export default async function ThreadPage({ params }) {
         </form>
       </header>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <Panel>
-            <PanelHeader title="Thread" description={`${messages.length} message${messages.length === 1 ? "" : "s"}`} />
-            <ol className="max-h-[min(70vh,42rem)] space-y-4 overflow-y-auto px-5 py-5">
-              {messages.map((message) => (
-                <MessageBubble key={message.uuid || message.id} message={message} customer={customer} threadUuid={thread.uuid} />
-              ))}
-              {!messages.length ? <p className="text-sm text-[var(--dash-ink-2)]">Nothing sent yet.</p> : null}
-            </ol>
-          </Panel>
-
-          <Panel>
-            <PanelHeader title={thread.channel === "note" ? "Add note" : "Reply"} />
-            <MessageComposer action={sendMessage} thread={thread} customerName={customer?.first_name} fixedChannel={thread.channel === "note" ? "note" : undefined} />
-          </Panel>
+      {/* Thread, composer and the customer's identity all live in one card —
+          the chip below opens the full profile without leaving the conversation. */}
+      <Panel>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--dash-line)] px-5 py-4">
+          <CustomerChip customer={customer} summary={summary} />
+          <p className="text-xs text-[var(--dash-muted)]">
+            {messages.length} message{messages.length === 1 ? "" : "s"}
+          </p>
         </div>
 
-        <div className="space-y-4">
-          {customer ? (
-            <Panel>
-              <PanelHeader title="Customer" />
-              <div className="px-5 py-5">
-                <Link href={`/dashboard/customers/${customer.uuid}`} className="flex items-center gap-3">
-                  <Avatar customer={customer} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-[var(--dash-ink)]">{fullName(customer)}</span>
-                    <span className="block truncate text-xs text-[var(--dash-muted)]">{customer.email}</span>
-                  </span>
-                </Link>
-                <dl className="mt-5 grid gap-4 border-t border-[var(--dash-line)] pt-5 sm:grid-cols-2">
-                  <Field label="Phone" value={customer.phone_number} />
-                  <Field label="Placements" value={String(summary.count)} />
-                  <Field label="Capital placed" value={money(summary.principal)} />
-                  <Field label="Under management" value={money(summary.underManagement)} />
-                </dl>
-              </div>
-            </Panel>
+        <ol className="max-h-[min(60vh,36rem)] space-y-4 overflow-y-auto px-5 py-5">
+          {messages.map((message) => (
+            <MessageBubble key={message.uuid || message.id} message={message} customer={customer} threadUuid={thread.uuid} />
+          ))}
+          {!messages.length ? <p className="text-sm text-[var(--dash-ink-2)]">Nothing sent yet.</p> : null}
+        </ol>
+
+        <div className="border-t border-[var(--dash-line)]">
+          <p className="px-5 pt-4 text-xs font-semibold text-[var(--dash-ink)]">{thread.channel === "note" ? "Add note" : "Reply"}</p>
+          <MessageComposer action={sendMessage} thread={thread} customerName={customer?.first_name} fixedChannel={thread.channel === "note" ? "note" : undefined} />
+        </div>
+
+        <div className="flex flex-wrap items-start gap-4 border-t border-[var(--dash-line)] px-5 py-3 text-xs text-[var(--dash-muted)]">
+          <span className="flex items-start gap-1.5">
+            <Clock className="mt-0.5 size-3.5 shrink-0" />
+            Delivered through Resend
+          </span>
+          {thread.channel === "note" ? (
+            <span className="flex items-start gap-1.5">
+              <StickyNote className="mt-0.5 size-3.5 shrink-0" />
+              Private note — never sent to the customer
+            </span>
           ) : null}
-
-          <Panel>
-            <PanelHeader title="Delivery" />
-            <div className="space-y-3 px-5 py-5 text-xs text-[var(--dash-ink-2)]">
-              <p className="flex items-start gap-2">
-                <Clock className="mt-0.5 size-3.5 shrink-0 text-[var(--dash-muted)]" />
-                Email messages are delivered through Resend. Delivery status is shown on each message.
-              </p>
-              {thread.channel === "note" ? <p className="flex items-start gap-2"><StickyNote className="mt-0.5 size-3.5 shrink-0 text-[var(--dash-muted)]" />This is a private note board. Notes are never sent.</p> : null}
-            </div>
-          </Panel>
         </div>
-      </div>
+      </Panel>
     </div>
   );
 }
@@ -136,7 +110,7 @@ function MessageBubble({ message, customer, threadUuid }) {
 
   return (
     <li className={inbound ? "flex justify-start" : "flex justify-end"}>
-      <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${inbound ? "bg-[var(--dash-page)]" : "bg-[var(--dash-accent-soft)]"}`}>
+      <div className={`min-w-0 max-w-[85%] rounded-2xl px-4 py-3 ${inbound ? "bg-[var(--dash-page)]" : "bg-[var(--dash-accent-soft)]"}`}>
         <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--dash-muted)]">
           <span className="font-medium text-[var(--dash-ink-2)]">
             {inbound ? fullName(customer) : message.author || "Admin"}
@@ -148,10 +122,10 @@ function MessageBubble({ message, customer, threadUuid }) {
           ) : null}
         </div>
         {inbound ? (
-          <p className="message-content mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--dash-ink)]">{cleanReceivedText(message.body)}</p>
+          <p className="message-content mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--dash-ink)]">{cleanReceivedText(message.body)}</p>
         ) : message.body_html ? (
           <div
-            className="message-content mt-1.5 max-w-none text-sm leading-relaxed text-[var(--dash-ink)]"
+            className="message-content mt-1.5 max-w-none break-words text-sm leading-relaxed text-[var(--dash-ink)]"
             dangerouslySetInnerHTML={{
               __html: sanitizeHtml(message.body_html, {
                 allowedTags: ["p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li", "blockquote"],
@@ -160,7 +134,7 @@ function MessageBubble({ message, customer, threadUuid }) {
             }}
           />
         ) : (
-          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--dash-ink)]">{message.body}</p>
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--dash-ink)]">{message.body}</p>
         )}
       </div>
     </li>

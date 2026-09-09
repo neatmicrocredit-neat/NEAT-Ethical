@@ -19,6 +19,7 @@
     "lucide-react": "^1.24.0",
     "motion": "^12.42.2",
     "next": "16.2.10",
+    "radix-ui": "^1.6.7",
     "react": "19.2.4",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.4",

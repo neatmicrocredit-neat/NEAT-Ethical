@@ -25,14 +25,14 @@ const values = [
 const vehicles = [
   {
     icon: TrendingUp,
-    name: "Neat Ethical",
+    name: "Ethical Investments",
     rate: "24% p.a.",
     monthly: "2% monthly flat profit",
-    text: "Designed as the steadier NEAT placement for investors who want ethical exposure with clear return modelling.",
+    text: "Designed as the steadier placement for investors who want ethical exposure with clear return modelling.",
   },
   {
     icon: Landmark,
-    name: "Neat Funding",
+    name: "Ethical Funding",
     rate: "60% p.a.",
     monthly: "5% monthly flat profit",
     text: "Routes capital through Neat Microfinance SME lending pools, so the higher return comes with lending-pool repayment risk.",

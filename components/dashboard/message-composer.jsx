@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Bold, CheckCircle2, Info, Italic, List, Paperclip, Send, StickyNote, Underline } from "lucide-react";
+import { AlertCircle, Bold, CheckCircle2, Info, Italic, List, Paperclip, Send, StickyNote, Underline } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonStyles } from "@/components/dashboard/ui";
@@ -159,7 +159,7 @@ export function MessageComposer({
             setBody(event.currentTarget.innerText);
             setBodyHtml(event.currentTarget.innerHTML);
           }}
-          className="min-h-28 whitespace-pre-wrap px-3 py-2.5 text-sm leading-relaxed outline-none empty:before:pointer-events-none empty:before:text-[var(--dash-muted)] empty:before:content-[attr(data-placeholder)]"
+          className="min-h-28 max-h-[min(50vh,28rem)] overflow-y-auto whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed outline-none empty:before:pointer-events-none empty:before:text-[var(--dash-muted)] empty:before:content-[attr(data-placeholder)]"
         />
       </div>
       {channel === "email" ? (
@@ -176,7 +176,7 @@ export function MessageComposer({
           />
         </label>
       ) : null}
-      {attachments.length ? <p className="text-xs text-[var(--dash-muted)]">{attachments.map((file) => file.name).join(", ")}</p> : null}
+      {attachments.length ? <p className="break-words text-xs text-[var(--dash-muted)]">{attachments.map((file) => file.name).join(", ")}</p> : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-[var(--dash-muted)]">

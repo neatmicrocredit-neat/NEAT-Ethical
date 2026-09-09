@@ -34,7 +34,7 @@ export function MenuDrawer() {
     >
       <DrawerTrigger render={<Button variant="ghost"><MenuIcon /></Button>} />
 
-      <DrawerContent>
+      <DrawerContent className="landing-theme bg-white">
         <DrawerHeader>
           <DrawerTitle>Menu</DrawerTitle>
         </DrawerHeader>

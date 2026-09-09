@@ -7,19 +7,33 @@ import {
   BarChart3,
   Briefcase,
   ChevronsLeft,
+  ClipboardCheck,
+  FileSpreadsheet,
+  FileText,
+  History,
   LayoutDashboard,
   Leaf,
+  ListTodo,
   LogOut,
   Menu,
   MessagesSquare,
   NotebookPen,
+  Receipt,
   Search,
+  Settings,
+  ShieldCheck,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * `capability` hides a section the signed-in role cannot use at all, rather than
+ * letting them navigate to a page that will only refuse them. Items with no
+ * capability are visible to everyone who can sign in.
+ */
 const NAV = [
   {
     heading: "Overview",
@@ -30,17 +44,44 @@ const NAV = [
     items: [
       { href: "/dashboard/customers", label: "Customers", icon: Users },
       { href: "/dashboard/investments", label: "Investments", icon: Briefcase },
+      { href: "/dashboard/approvals", label: "Approvals", icon: ClipboardCheck, badgeKey: "approvals" },
+    ],
+  },
+  {
+    heading: "Money",
+    items: [
+      { href: "/dashboard/payouts", label: "Payouts", icon: Wallet, badgeKey: "payouts", capability: "ledger.read" },
+      { href: "/dashboard/transactions", label: "Ledger", icon: Receipt, capability: "ledger.read" },
+    ],
+  },
+  {
+    heading: "Governance",
+    items: [
+      { href: "/dashboard/compliance", label: "Compliance", icon: ShieldCheck, badgeKey: "compliance" },
+      { href: "/dashboard/documents", label: "Documents", icon: FileText, badgeKey: "documents" },
+      { href: "/dashboard/audit", label: "Audit trail", icon: History, capability: "audit.read" },
     ],
   },
   {
     heading: "Insight",
-    items: [{ href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 }],
+    items: [
+      { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, capability: "analytics.read" },
+      { href: "/dashboard/reports", label: "Reports", icon: FileSpreadsheet, capability: "reports.export" },
+    ],
   },
   {
-    heading: "Communication",
+    heading: "Operations",
     items: [
+      { href: "/dashboard/tasks", label: "Tasks", icon: ListTodo, badgeKey: "tasks" },
       { href: "/dashboard/messages", label: "Messages", icon: MessagesSquare, badgeKey: "messages" },
       { href: "/dashboard/notes", label: "Notes", icon: NotebookPen },
+    ],
+  },
+  {
+    heading: "Administration",
+    items: [
+      { href: "/dashboard/team", label: "Team", icon: Users, capability: "team.read" },
+      { href: "/dashboard/settings", label: "Settings", icon: Settings, capability: "settings.write" },
     ],
   },
 ];
@@ -50,7 +91,7 @@ function isActive(pathname, item) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-export function DashboardShell({ children, badges = {}, adminEmail }) {
+export function DashboardShell({ children, badges = {}, adminEmail, roleLabel = "Full access", capabilities = [] }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -58,14 +99,11 @@ export function DashboardShell({ children, badges = {}, adminEmail }) {
     setMobileOpen(false);
   }, [pathname]);
 
+  const sidebarProps = { pathname, badges, adminEmail, roleLabel, capabilities };
+
   return (
     <div className="dash min-h-screen bg-[var(--dash-page)] text-[var(--dash-ink)]">
-      <Sidebar
-        className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:flex"
-        pathname={pathname}
-        badges={badges}
-        adminEmail={adminEmail}
-      />
+      <Sidebar className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:flex" {...sidebarProps} />
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -75,13 +113,7 @@ export function DashboardShell({ children, badges = {}, adminEmail }) {
             className="absolute inset-0 bg-[var(--dash-ink)]/40 backdrop-blur-[2px]"
             onClick={() => setMobileOpen(false)}
           />
-          <Sidebar
-            className="absolute inset-y-0 left-0 flex w-72 shadow-2xl"
-            pathname={pathname}
-            badges={badges}
-            adminEmail={adminEmail}
-            onClose={() => setMobileOpen(false)}
-          />
+          <Sidebar className="absolute inset-y-0 left-0 flex w-72 shadow-2xl" {...sidebarProps} onClose={() => setMobileOpen(false)} />
         </div>
       ) : null}
 
@@ -93,7 +125,13 @@ export function DashboardShell({ children, badges = {}, adminEmail }) {
   );
 }
 
-function Sidebar({ className, pathname, badges, adminEmail, onClose }) {
+function Sidebar({ className, pathname, badges, adminEmail, roleLabel, capabilities, onClose }) {
+  const allowed = new Set(capabilities);
+  const groups = NAV.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.capability || allowed.has(item.capability)),
+  })).filter((group) => group.items.length);
+
   return (
     <aside className={cn("flex-col border-r border-[var(--dash-line)] bg-[var(--dash-surface)]", className)}>
       <div className="flex items-center justify-between gap-2 px-5 py-5">
@@ -114,7 +152,7 @@ function Sidebar({ className, pathname, badges, adminEmail, onClose }) {
       </div>
 
       <nav className="dash-scroll flex-1 overflow-y-auto px-3 pb-4">
-        {NAV.map((group) => (
+        {groups.map((group) => (
           <div key={group.heading} className="mb-5">
             <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--dash-muted)]">{group.heading}</p>
             <ul className="space-y-0.5">
@@ -137,7 +175,15 @@ function Sidebar({ className, pathname, badges, adminEmail, onClose }) {
                       <Icon className="size-4 shrink-0" />
                       <span className="flex-1 truncate">{item.label}</span>
                       {badge ? (
-                        <span className="rounded-full bg-[var(--dash-accent)] px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
+                        <span
+                          className={cn(
+                            "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                            // Overdue money reads as a problem, not a count.
+                            item.badgeKey === "payouts"
+                              ? "bg-[var(--status-critical)] text-white"
+                              : "bg-[var(--dash-accent)] text-white"
+                          )}
+                        >
                           {badge > 99 ? "99+" : badge}
                         </span>
                       ) : null}
@@ -157,7 +203,7 @@ function Sidebar({ className, pathname, badges, adminEmail, onClose }) {
           </span>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block truncate text-xs font-semibold text-[var(--dash-ink)]">{adminEmail || "Administrator"}</span>
-            <span className="block text-[11px] text-[var(--dash-muted)]">Full access</span>
+            <span className="block text-[11px] text-[var(--dash-muted)]">{roleLabel}</span>
           </span>
         </div>
         <form action="/api/auth/logout" method="post" className="mt-2">

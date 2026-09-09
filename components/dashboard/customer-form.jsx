@@ -41,15 +41,17 @@ function Section({ title, description, children }) {
 }
 
 /**
- * Edits the profile fields only. Uploaded documents come from the public
- * onboarding flow (app/api/investment-requests) and are replaced there.
+ * Edits the profile fields, or creates a new customer when `customer` has no
+ * uuid yet. Uploaded documents come from the public onboarding flow
+ * (app/api/investment-requests) and can't be attached from here.
  */
-export function CustomerForm({ action, customer, cancelHref }) {
+export function CustomerForm({ action, customer = {}, cancelHref, submitLabel }) {
   const [state, formAction, pending] = useActionState(action, { ok: false, error: null, message: null });
+  const isNew = !customer.uuid;
 
   return (
     <form action={formAction} className="space-y-5">
-      <input type="hidden" name="uuid" value={customer.uuid} />
+      {customer.uuid ? <input type="hidden" name="uuid" value={customer.uuid} /> : null}
 
       {state.error ? (
         <p role="alert" className="flex items-start gap-2 rounded-xl border border-[#f3c9c9] bg-[#fdeced] px-3.5 py-2.5 text-sm text-[#96201f]">
@@ -81,7 +83,14 @@ export function CustomerForm({ action, customer, cancelHref }) {
         <Text label="LGA" name="lga" defaultValue={customer.lga} />
       </Section>
 
-      <Section title="Identification" description="Document images are captured during onboarding and cannot be replaced here.">
+      <Section
+        title="Identification"
+        description={
+          isNew
+            ? "Document images can be attached later through the public onboarding link."
+            : "Document images are captured during onboarding and cannot be replaced here."
+        }
+      >
         <Text label="ID type" name="id_type" defaultValue={customer.id_type} options={["NIN", "Voter's card", "Driver's licence", "International passport"]} />
         <Text label="ID number" name="id_number" defaultValue={customer.id_number} />
       </Section>
@@ -96,7 +105,7 @@ export function CustomerForm({ action, customer, cancelHref }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={pending} className={buttonStyles.primary}>
-          {pending ? "Saving…" : "Save customer"}
+          {pending ? "Saving…" : submitLabel || "Save customer"}
         </button>
         {cancelHref ? (
           <Link href={cancelHref} className={buttonStyles.secondary}>

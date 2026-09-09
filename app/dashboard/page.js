@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, CalendarClock, Inbox, Plus, ShieldCheck, TriangleAlert } from "lucide-react";
 
+import { complianceFor, groupDocumentsByCustomer } from "@/lib/compliance";
 import { loadBook } from "@/lib/dashboard-data";
+import { effectiveStatus, loadDocuments } from "@/lib/documents";
 import { dayMonth, fullName, money, percent, relativeTime, shortDate } from "@/lib/format";
 import { deriveStatus, endOf, projectInvestment, summarizeBook } from "@/lib/investments";
+import { buildPayoutRun, ledgerSummary, loadTransactions } from "@/lib/ledger";
+import { loadTasks, taskSummary } from "@/lib/tasks";
+import { NEEDS_REVIEW, workflowOf } from "@/lib/workflow";
 import {
   bookValueTrend,
   capitalInflow,
@@ -24,7 +29,65 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardOverview() {
   const now = new Date();
-  const { customers, investments } = await loadBook();
+  const [{ customers, investments }, { transactions }, { documents }, { tasks }] = await Promise.all([
+    loadBook(),
+    loadTransactions(),
+    loadDocuments(),
+    loadTasks(),
+  ]);
+
+  // Everything that wants a human today, gathered before the analytics so the
+  // top of the page answers "what do I do now" rather than "how are we doing".
+  const payoutRun = buildPayoutRun(investments, transactions, now, { horizonDays: 0 });
+  const documentsByCustomer = groupDocumentsByCustomer(documents);
+  const cash = ledgerSummary(transactions);
+  const tasksDue = taskSummary(tasks, now);
+  const queue = investments.filter((investment) => NEEDS_REVIEW.has(workflowOf(investment).key));
+  const unverified = customers.filter((customer) => {
+    const record = complianceFor(customer, documentsByCustomer.get(String(customer.id)) || [], now);
+    return !record.cleared && !record.blocked;
+  });
+  const pendingDocuments = documents.filter((document) => effectiveStatus(document, now) === "pending");
+
+  const attention = [
+    {
+      href: "/dashboard/payouts",
+      label: "Payouts overdue",
+      value: payoutRun.overdue.length,
+      detail: money(payoutRun.overdueValue),
+      icon: TriangleAlert,
+      urgent: payoutRun.overdue.length > 0,
+    },
+    {
+      href: "/dashboard/approvals",
+      label: "Awaiting approval",
+      value: queue.length,
+      detail: money(queue.reduce((sum, investment) => sum + (Number(investment.amount) || 0), 0)),
+      icon: Inbox,
+    },
+    {
+      href: "/dashboard/compliance",
+      label: "KYC incomplete",
+      value: unverified.length,
+      detail: `${customers.length - unverified.length} cleared`,
+      icon: ShieldCheck,
+    },
+    {
+      href: "/dashboard/documents",
+      label: "Documents to review",
+      value: pendingDocuments.length,
+      detail: "Uploaded, not yet verified",
+      icon: Inbox,
+    },
+    {
+      href: "/dashboard/tasks",
+      label: "Tasks overdue",
+      value: tasksDue.overdue,
+      detail: `${tasksDue.open + tasksDue.inProgress} open`,
+      icon: CalendarClock,
+      urgent: tasksDue.overdue > 0,
+    },
+  ];
 
   const summary = summarizeBook(investments, now);
   const grouped = groupByCustomer(customers, investments, now);
@@ -61,10 +124,42 @@ export default async function DashboardOverview() {
           </Link>
           <Link href="/dashboard/investments/new" className={buttonStyles.primary}>
             <Plus className="size-4" />
-            New placement
+            New investment
           </Link>
         </div>
       </header>
+
+      {/* Needs attention — the work queue, before the analytics. */}
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {attention.map((item) => {
+          const Icon = item.icon;
+          return (
+            <li key={item.href + item.label}>
+              <Link
+                href={item.href}
+                className={`flex h-full items-start gap-3 rounded-2xl bg-[var(--dash-surface)] p-4 ring-1 transition hover:shadow-[0_8px_24px_rgb(11_17_32_/_0.06)] ${
+                  item.urgent && item.value ? "ring-[#f3c9c9]" : "ring-[var(--dash-line)] hover:ring-[#c9d8ea]"
+                }`}
+              >
+                <span
+                  className={`grid size-8 shrink-0 place-items-center rounded-xl ${
+                    item.urgent && item.value ? "bg-[#fdeced] text-[var(--status-critical)]" : "bg-[var(--dash-page)] text-[var(--dash-muted)]"
+                  }`}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[1.35rem] font-semibold leading-none tracking-tight text-[var(--dash-ink)]">
+                    {item.value.toLocaleString()}
+                  </span>
+                  <span className="mt-1 block truncate text-xs font-medium text-[var(--dash-ink-2)]">{item.label}</span>
+                  <span className="mt-0.5 block truncate text-[11px] text-[var(--dash-muted)]">{item.detail}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
 
       {/* Hero band — the one number the console leads with. */}
       <Panel className="overflow-hidden">
@@ -112,7 +207,12 @@ export default async function DashboardOverview() {
         <StatCard
           label="Monthly payout obligation"
           value={money(summary.monthlyObligation)}
-          hint="Profit due each month on the active book"
+          hint={
+            cash.count
+              ? `${money(cash.inflow)} received · ${money(cash.outflow)} paid to date`
+              : "Profit due each month on the active book"
+          }
+          href="/dashboard/payouts"
           upIsGood={false}
         />
         <StatCard
@@ -413,7 +513,7 @@ export default async function DashboardOverview() {
       </Panel>
 
       <p className="text-center text-xs text-[var(--dash-muted)]">
-        Projections apply the published rates — Neat Ethical 2%/month, Neat Funding 5%/month — over each placement&apos;s term.
+        Projections apply the published rates — Ethical Investments 2%/month, Ethical Funding 5%/month — over each placement&apos;s term.
       </p>
     </div>
   );

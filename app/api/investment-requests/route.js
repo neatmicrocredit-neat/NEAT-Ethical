@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServerClient, isMissingColumn } from "@/lib/supabase-server";
 import { sendInvestmentEmails } from "@/lib/email";
 
 const emptyToNull = (value) => {
@@ -99,11 +99,24 @@ export async function POST(request) {
       other_instructions: emptyToNull(formData.get("other_instructions")),
     };
 
-    const { data: investment, error: investmentError } = await supabase
+    // A public submission is a *request*, not a live placement — it enters the
+    // console's approvals queue rather than the active book. Projects that have
+    // not applied 0003 yet have no `status` column, so the insert falls back to
+    // the payload without the workflow fields rather than failing the customer's
+    // submission.
+    let { data: investment, error: investmentError } = await supabase
       .from("investments")
-      .insert(investmentPayload)
+      .insert({ ...investmentPayload, status: "pending", submitted_at: new Date().toISOString() })
       .select("id, uuid, amount, vehicle")
       .single();
+
+    if (investmentError && isMissingColumn(investmentError)) {
+      ({ data: investment, error: investmentError } = await supabase
+        .from("investments")
+        .insert(investmentPayload)
+        .select("id, uuid, amount, vehicle")
+        .single());
+    }
 
     if (investmentError) {
       console.error("Investment insert error:", investmentError);

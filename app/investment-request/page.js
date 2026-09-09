@@ -16,11 +16,11 @@ export default function InvestmentRequestPage() {
           <p className="text-sm font-black uppercase text-white/70">Make an investment</p>
           <h2 className="mt-4 text-4xl leading-none sm:text-5xl">Two ways to place capital with NEAT.</h2>
           <p className="mt-6 max-w-xl text-sm font-semibold leading-7 text-white/75">
-            Ethical Investment offers 2% monthly flat profit. Ethical Funding offers 5% monthly flat profit by placing capital into SME lending pools through Neat Microfinance.
+            Ethical Investments offers 2% monthly flat profit. Ethical Funding offers 5% monthly flat profit by placing capital into SME lending pools through Neat Microfinance.
           </p>
           <div className="mt-8 grid gap-3">
             <div className="rounded-lg bg-white/14 p-5">
-              <p className="text-sm font-black">Ethical Investment</p>
+              <p className="text-sm font-black">Ethical Investments</p>
               <p className="mt-2 text-3xl font-black">2% p.m.</p>
               <p className="mt-1 text-xs font-bold text-white/68">2% monthly flat profit</p>
             </div>
