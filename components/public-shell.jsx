@@ -4,12 +4,25 @@ import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
 
 
+/**
+ * Note on the root's `overflow-x-clip`.
+ *
+ * It used to be `overflow-hidden`, which makes this element a scroll container —
+ * and a scroll container becomes the containing scrollport for any descendant
+ * using `position: sticky`, so sticky elements inside silently stop sticking to
+ * the viewport. That is what kept the legal pages' contents rail from following
+ * the reader down the page.
+ *
+ * `overflow-x: clip` clips the same decorative horizontal overflow without
+ * establishing a scroll container, so sticky keeps working. The hero section
+ * clips on its own, which is where the overflowing art actually lives.
+ */
 export default function PublicShell({ eyebrow = "NEAT Ethical", title, description, children, cta = true, compact = false }) {
   return (
-    <div className="landing-theme min-h-screen overflow-hidden bg-[var(--page)] text-[var(--ink)]">
+    <div className="landing-theme min-h-screen overflow-x-clip bg-[var(--page)] text-[var(--ink)]">
       <main>
         <section
-          className={`relative flex items-center border-b border-[color:var(--line)] px-5 sm:px-8 ${
+          className={`relative flex items-center overflow-hidden border-b border-[color:var(--line)] px-5 sm:px-8 ${
             compact ? "pb-12 pt-32 sm:pb-16 sm:pt-36" : "min-h-screen pb-16 pt-28"
           }`}
         >
