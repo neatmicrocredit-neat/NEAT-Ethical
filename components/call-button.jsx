@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, Loader2, Mic, MicOff, Phone, PhoneOff } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, Loader2, Mic, MicOff, Phone, PhoneOff, TriangleAlert, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useCall, useCallDuration } from "@/components/call-provider";
 
 // TEMPORARY: Vapi voice-call CTA. To remove, delete this file, components/call-provider.jsx
@@ -23,6 +23,8 @@ export default function CallButton({ variant = "solid", className = "" }) {
     <button
       type="button"
       onClick={toggle}
+      aria-busy={status === "connecting"}
+      title={status === "connecting" ? "Connecting — click to cancel" : undefined}
       className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold transition hover:-translate-y-1 ${styles} ${className}`}
     >
       {status === "connecting" ? (
@@ -52,8 +54,52 @@ export function CallDock() {
   }
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {inCall ? <CallWidget key="widget" /> : <CallFAB key="fab" />}
+    <>
+      <CallError />
+      <AnimatePresence mode="wait" initial={false}>
+        {inCall ? <CallWidget key="widget" /> : <CallFAB key="fab" />}
+      </AnimatePresence>
+    </>
+  );
+}
+
+/**
+ * A failed call used to be silent — the visitor saw the button flick back to
+ * "Talk to NEAT" with no explanation and clicked again, which was itself what
+ * broke the next attempt. Saying what went wrong is what stops that loop.
+ */
+function CallError() {
+  const { error, dismissError } = useCall();
+
+  useEffect(() => {
+    if (!error) return undefined;
+    const timer = setTimeout(dismissError, 8000);
+    return () => clearTimeout(timer);
+  }, [error, dismissError]);
+
+  return (
+    <AnimatePresence>
+      {error ? (
+        <motion.div
+          role="alert"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 12 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="landing-theme fixed bottom-44 right-6 z-50 flex w-[17rem] max-w-[calc(100vw-3rem)] items-start gap-2.5 rounded-2xl border border-[color:var(--line)] bg-white p-3.5 shadow-[0_24px_60px_rgb(33_21_95_/_0.22)]"
+        >
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-red-600" />
+          <p className="flex-1 text-xs font-bold leading-5 text-[var(--ink)]">{error}</p>
+          <button
+            type="button"
+            onClick={dismissError}
+            aria-label="Dismiss"
+            className="-mr-1 -mt-1 grid size-6 shrink-0 place-items-center rounded-full text-[var(--muted-ink)] transition hover:bg-[var(--soft)]"
+          >
+            <X className="size-3.5" />
+          </button>
+        </motion.div>
+      ) : null}
     </AnimatePresence>
   );
 }
@@ -70,7 +116,8 @@ function CallFAB() {
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       className="landing-theme fixed bottom-24 right-6 z-40 flex items-center justify-center rounded-full bg-[var(--brand)] p-4 text-white shadow-lg transition hover:scale-110 hover:shadow-xl"
-      aria-label="Talk to NEAT"
+      aria-label={status === "connecting" ? "Connecting a call — activate to cancel" : "Talk to NEAT"}
+      aria-busy={status === "connecting"}
     >
       {status === "idle" && (
         <span aria-hidden="true" className="absolute inset-0 animate-ping rounded-full bg-[var(--brand)] opacity-30" />

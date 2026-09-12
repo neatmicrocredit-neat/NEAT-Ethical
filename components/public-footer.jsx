@@ -6,7 +6,7 @@ import Image from "next/image";
 const footerGroups = {
   "Company": [["About", "/about"], ["Contact", "/contact"], ["Get started", "/investment-request"]],
   "Product" : [["Calculator", "/returns-calculator"], ["Dashboard", "/dashboard"], ["Login", "/auth/login"]],
-  "Legal": [["Privacy", "/privacy-policy"], ["Terms", "/terms-of-service"]],
+  "Legal": [["Privacy Policy", "/privacy-policy"], ["Terms of Use", "/terms-of-service"]],
 }
 
 
