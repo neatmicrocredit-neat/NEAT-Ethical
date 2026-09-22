@@ -1,0 +1,27 @@
+"use client";
+
+import { ArrowUpRight, BriefcaseBusiness, CircleDollarSign, X } from "lucide-react";
+import { useState } from "react";
+
+const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#075ca8] focus:bg-white focus:ring-4 focus:ring-blue-100";
+
+const config = {
+  investment: { title: "Place an investment request", description: "Tell us what you would like to invest. A NEAT adviser will confirm your request within 24 hours.", icon: BriefcaseBusiness },
+  loan: { title: "Request a loan", description: "Tell us how much you need and what it will support. Our team will respond within 48 hours.", icon: CircleDollarSign },
+  funding: { title: "Fund your account", description: "Submit the amount you plan to fund. Your account number will be included in the confirmation email.", icon: ArrowUpRight },
+};
+
+export function CustomerRequestModal({ type, triggerLabel, triggerClassName = "", accountNumber }) {
+  const [open, setOpen] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState("");
+  const item = config[type]; const Icon = item.icon;
+  async function submit(event) {
+    event.preventDefault(); setBusy(true); setMessage("");
+    const form = new FormData(event.currentTarget); const payload = { type };
+    form.forEach((value, key) => { payload[key] = value; });
+    const response = await fetch("/api/portal/requests", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await response.json(); setBusy(false);
+    if (!response.ok) { setMessage(data.error || "Could not submit your request."); return; }
+    setMessage("Request received. We have sent a confirmation to your email."); event.currentTarget.reset();
+  }
+  return <><button onClick={() => { setOpen(true); setMessage(""); }} className={triggerClassName || "inline-flex items-center gap-2 rounded-xl bg-[#075ca8] px-4 py-3 text-sm font-black text-white"}>{triggerLabel}<ArrowUpRight className="size-4" /></button>{open ? <div className="fixed inset-0 z-[70] flex items-center justify-center p-4"><button aria-label="Close request form" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm" /><section role="dialog" aria-modal="true" className="relative z-10 max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between gap-4"><span className="grid size-12 place-items-center rounded-2xl bg-blue-50 text-[#075ca8]"><Icon className="size-6" /></span><button onClick={() => setOpen(false)} aria-label="Close" className="rounded-xl bg-slate-100 p-2 text-slate-500 hover:bg-slate-200"><X className="size-5" /></button></div><h2 className="mt-5 text-2xl font-black tracking-tight text-slate-950">{item.title}</h2><p className="mt-2 text-sm font-semibold leading-6 text-slate-500">{item.description}</p>{type === "funding" && accountNumber ? <p className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-sm font-bold text-[#075ca8]">Your NEAT account number: {accountNumber}</p> : null}<form onSubmit={submit} className="mt-6 space-y-4">{type !== "funding" ? <label className="block text-xs font-black uppercase tracking-wider text-slate-500">{type === "loan" ? "Amount requested (₦)" : "Investment amount (₦)"}<input required min="1" name="amount" type="number" placeholder="e.g. 500,000" className={inputClass} /></label> : <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Funding amount (₦)<input required min="1" name="amount" type="number" placeholder="e.g. 250,000" className={inputClass} /></label>}{type === "investment" ? <><label className="block text-xs font-black uppercase tracking-wider text-slate-500">Investment option<select name="vehicle" defaultValue="ethical" className={inputClass}><option value="ethical">Ethical Investment</option><option value="funding">Ethical Funding</option></select></label><label className="block text-xs font-black uppercase tracking-wider text-slate-500">Note for your adviser<textarea name="note" rows={3} className={inputClass} placeholder="Your goals or preferred arrangement..." /></label></> : null}{type === "loan" ? <><label className="block text-xs font-black uppercase tracking-wider text-slate-500">Purpose<input required name="purpose" className={inputClass} placeholder="What will the loan support?" /></label><label className="block text-xs font-black uppercase tracking-wider text-slate-500">Term (months)<input required min="1" name="term_months" type="number" className={inputClass} placeholder="e.g. 12" /></label></> : null}{type === "funding" ? <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Transfer note (optional)<textarea name="note" rows={3} className={inputClass} placeholder="Reference or anything our team should know..." /></label> : null}{message ? <p className={`rounded-xl px-4 py-3 text-sm font-bold ${message.startsWith("Request received") ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{message}</p> : null}<button disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#075ca8] px-4 py-3.5 text-sm font-black text-white disabled:opacity-60">{busy ? "Submitting..." : "Submit request"}<ArrowUpRight className="size-4" /></button></form></section></div> : null}</>;
+}
