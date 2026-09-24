@@ -28,6 +28,30 @@ export async function POST(request) {
       }).select("id, auth_user_id, account_number, first_name, last_name, email, phone_number").single();
       if (error) { await supabase.auth.admin.deleteUser(auth.user.id); throw error; }
       customer = data;
+    } else if (!customer.auth_user_id) {
+      // Legacy investment-request customers may have a profile but no login yet.
+      // Turn that record into an account rather than leaving it unable to sign in.
+      temporaryPassword = makeTemporaryPassword();
+      const { data: auth, error: authError } = await supabase.auth.admin.createUser({ email, password: temporaryPassword, email_confirm: true });
+      if (authError) return Response.json({ error: authError.message }, { status: 400 });
+      const { data, error } = await supabase.from("customers").update({
+        first_name: firstName, last_name: lastName, other_names: value(form, "other_names"), phone_number: value(form, "phone_number"),
+        gender: value(form, "gender"), date_of_birth: value(form, "date_of_birth"), id_type: value(form, "id_type"), id_number: value(form, "id_number"),
+        address: value(form, "address"), state: value(form, "state"), lga: value(form, "lga"), nok_name: value(form, "nok_name"), nok_address: value(form, "nok_address"),
+        nok_gender: value(form, "nok_gender"), nok_relationship: value(form, "nok_relationship"), nok_phone_number: value(form, "nok_phone_number"),
+        auth_user_id: auth.user.id, account_number: customer.account_number || accountNumber(), has_usable_password: false,
+      }).eq("id", customer.id).select("id, auth_user_id, account_number, first_name, last_name, email, phone_number").single();
+      if (error) { await supabase.auth.admin.deleteUser(auth.user.id); throw error; }
+      customer = data;
+    } else {
+      const { data, error } = await supabase.from("customers").update({
+        first_name: firstName, last_name: lastName, other_names: value(form, "other_names"), phone_number: value(form, "phone_number"),
+        gender: value(form, "gender"), date_of_birth: value(form, "date_of_birth"), id_type: value(form, "id_type"), id_number: value(form, "id_number"),
+        address: value(form, "address"), state: value(form, "state"), lga: value(form, "lga"), nok_name: value(form, "nok_name"), nok_address: value(form, "nok_address"),
+        nok_gender: value(form, "nok_gender"), nok_relationship: value(form, "nok_relationship"), nok_phone_number: value(form, "nok_phone_number"),
+      }).eq("id", customer.id).select("id, auth_user_id, account_number, first_name, last_name, email, phone_number").single();
+      if (error) throw error;
+      customer = data;
     }
     const { data: investment, error: investmentError } = await supabase.from("investments").insert({
       customer_id: customer.id, amount: value(form, "amount"), start_date: value(form, "start_date"), end_date: value(form, "end_date"), rollover: form.get("rollover") === "true",
@@ -35,8 +59,15 @@ export async function POST(request) {
       vehicle: form.get("vehicle") === "funding" ? "funding" : "ethical", other_instructions: value(form, "other_instructions"), status: "pending", submitted_at: new Date().toISOString(),
     }).select("id, uuid, amount, vehicle").single();
     if (investmentError) throw investmentError;
-    try { await sendPortalInvestmentEmails({ customer, investment }); } catch (emailError) { console.error("Portal investment email error:", emailError); }
-    return Response.json({ customer_id: customer.id, investment_id: investment.id, temporaryPassword }, { status: 201 });
+    try {
+      await sendPortalInvestmentEmails({ customer, investment, temporaryPassword });
+      if (temporaryPassword) await supabase.from("customers").update({ onboarding_email_sent_at: new Date().toISOString(), onboarding_email_error: null }).eq("id", customer.id);
+    } catch (emailError) {
+      console.error("Portal investment email error:", emailError);
+      if (temporaryPassword) await supabase.from("customers").update({ onboarding_email_error: emailError.message || "Delivery failed" }).eq("id", customer.id);
+    }
+    // Credentials are delivered only through the customer's email, never in a browser response.
+    return Response.json({ customer_id: customer.id, investment_id: investment.id }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error.message || "Could not submit investment request." }, { status: 500 });
   }

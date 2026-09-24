@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
   async function submit(event) {
     event.preventDefault(); setBusy(true); setMessage("");
-    const response = await fetch("/api/customer-auth/password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password }) });
+    const response = await fetch("/api/customer-auth/password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "first-password", password }) });
     const data = await response.json();
     if (!response.ok) { setMessage(data.error || "Could not update password."); setBusy(false); return; }
     router.push("/portal");
