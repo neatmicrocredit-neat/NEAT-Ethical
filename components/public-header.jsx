@@ -55,6 +55,9 @@ export default function PublicHeader() {
           <Link href="/contact" className="transition hover:text-[var(--brand)]">
             Contact
           </Link>
+          <Link href="/dashboard" className="transition hover:text-[var(--brand)]">
+            Dashboard
+          </Link>
         </nav>
         <div className="flex items-center gap-3">
           {!isMobile &&
