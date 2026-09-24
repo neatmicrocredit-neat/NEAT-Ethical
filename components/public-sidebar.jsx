@@ -51,6 +51,10 @@ export function MenuDrawer() {
             <Link href="/contact" className="transition hover:text-[var(--brand)]">
                 Contact
             </Link>
+
+            <Link href="/dashboard" className="transition hover:text-[var(--brand)]">
+                Dashboard
+            </Link>
         </div>
 
         <DrawerFooter>
